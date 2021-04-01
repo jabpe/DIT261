@@ -1,0 +1,62 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: ff8133526f17abd467221a0480fe566b9416c805c36a57664b079f6fc0bddd0d
+
+name:           labs
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/labs#readme>
+homepage:       https://github.com/githubuser/labs#readme
+bug-reports:    https://github.com/githubuser/labs/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2021 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/labs
+
+library
+  exposed-modules:
+      Lab1
+  other-modules:
+      Paths_labs
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+executable labs-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_labs
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , labs
+  default-language: Haskell2010
+
+test-suite labs-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_labs
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , labs
+  default-language: Haskell2010
