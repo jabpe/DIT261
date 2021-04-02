@@ -1,4 +1,4 @@
-module Lab1
+module Lib
     ( someFunc
     ) where
 

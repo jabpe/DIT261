@@ -4,13 +4,13 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ff8133526f17abd467221a0480fe566b9416c805c36a57664b079f6fc0bddd0d
+-- hash: 86f2610410015c188bec476326142b70e5dc45b5aeada03db6d24a1bf3e6d618
 
-name:           labs
+name:           LabA
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/labs#readme>
-homepage:       https://github.com/githubuser/labs#readme
-bug-reports:    https://github.com/githubuser/labs/issues
+description:    Please see the README on GitHub at <https://github.com/githubuser/LabA#readme>
+homepage:       https://github.com/githubuser/LabA#readme
+bug-reports:    https://github.com/githubuser/LabA/issues
 author:         Author name here
 maintainer:     example@example.com
 copyright:      2021 Author name here
@@ -23,40 +23,42 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/labs
+  location: https://github.com/githubuser/LabA
 
 library
   exposed-modules:
-      Lab1
+      Lib
   other-modules:
-      Paths_labs
+      Paths_LabA
   hs-source-dirs:
       src
   build-depends:
       base >=4.7 && <5
   default-language: Haskell2010
 
-executable labs-exe
-  main-is: Main.hs
+executable LabA-exe
+  main-is: given.hs
   other-modules:
-      Paths_labs
+      Paths_LabA
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -eventlog -O2 -feager-blackholing
   build-depends:
       base >=4.7 && <5
-    , labs
+    , random
+    , criterion
+    , parallel
   default-language: Haskell2010
 
-test-suite labs-test
+test-suite LabA-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_labs
+      Paths_LabA
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
-    , labs
+      LabA
+    , base >=4.7 && <5
   default-language: Haskell2010

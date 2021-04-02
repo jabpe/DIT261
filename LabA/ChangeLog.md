@@ -1,3 +1,3 @@
-# Changelog for labs
+# Changelog for LabA
 
 ## Unreleased changes
