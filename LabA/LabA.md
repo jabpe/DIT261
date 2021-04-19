@@ -1,5 +1,6 @@
 # Laboratory A
-Predrag Bozhovikj
+Group 4
+Predrag Bozhovikj, Erik Sievers
 
 ## Assignment 1
 
@@ -59,3 +60,23 @@ Ran with params `+RTS -A300m -lf -N4 -s` to minimise GC activity resulting in hi
 
   Productivity  98.5% of total user, 93.1% of total elapsed
 ```
+
+### Par monad
+
+## Assignment 2
+
+<!-- Todo: add benchmarks -->
+
+## Assignment 3
+
+### 3.1 parBuffer
+
+parBuffer takes an integer and a strategy as a parameter and then puts that number of sparks in a buffer. Once a spark is done, another can be added.
+
+### 3.2 Compare parListChunk with parBuffer
+
+<!-- Insert screenshots of threadscope spark pool and explain -->
+
+### 3.3 Combine chunking with parBuffer
+
+<!-- Try it out, look at threadscope and explain what's going on -->

@@ -1,9 +1,15 @@
 import Data.List
+import Data.Maybe
 import System.Random
 import Criterion.Main
 import Control.Parallel
 import Control.Parallel.Strategies
 import Control.Monad.Par
+import Sudoku
+import Control.Exception
+import System.Environment
+import Control.Parallel.Strategies hiding (parMap)
+import GHC.Conc hiding (par, pseq)
 
 -- code borrowed from the Stanford Course 240h (Functional Systems in Haskell)
 -- I suspect it comes from Bryan O'Sullivan, author of Criterion
@@ -31,7 +37,7 @@ jackknife f = map f . resamples 500
 crud = zipWith (\x a -> sin (x / 300)**2 + a) [0..]
 
 
--- PREDRAG BOZHOVIKJ
+-- PREDRAG BOZHOVIKJ & ERIK SIEVERS
 -- April 2021
 -- LabA
 
@@ -64,6 +70,18 @@ chunkList :: Int -> [a] -> [[a]]
 chunkList _ [] = []
 chunkList n xs = as : chunkList n bs where (as,bs) = splitAt n xs
 
+--  par monad implementation
+mmap :: NFData b => (a -> b) -> [a] -> [b]
+mmap f []     = []
+mmap f (x:xs) = runPar $ do
+  i <- new
+  j <- new
+  fork (put i (f x))
+  fork (put j (mmap f xs))
+  x'  <- get i
+  xs'  <- get j
+  return (x':xs')
+
 numOfCores :: Int
 numOfCores = 4
 
@@ -87,14 +105,39 @@ _parMap f as =
                   r <- loop halfT f right
                   return $ l ++ r
 
--- ASSIGNMENT 2
--- qsort reinvented with strategies as psort
-psort :: NFData a => Ord a => [a] -> [a]
-psort [] = []
-psort (x:xs) = psort [y | y <-xs, y<x] ++ [x] ++ psort [y | y <-xs, y>=x] `using` parBuffer 100 rdeepseq
+-- Assignment 2, divide and conquer
+-- Rethinking this. I want a signature
+-- dnc :: (a -> b) -> a -> (a -> (a,a)) -> (b -> b -> c)
+-- dnc :: f divider combiner data
 
--- second divide and conquer a
+dnc :: (a -> b) -> a -> a -> (b -> b -> c) -> c
+dnc f d1 d2 g = runEval $ do
+    d1' <- rpar (f d1)
+    d2' <- rpar (f d2) 
+    return (g d1' d2')
 
+msort :: Ord a => [a] -> [a]
+msort xs
+    | length xs < 2 = xs
+    | otherwise     = let
+        (x1, x2) = splitAt ((length xs + 1) `div` 2) xs
+        in dnc msort x1 x2 ms
+
+ms :: Ord a => [a] -> [a] -> [a]
+ms [] xs        = xs
+ms xs []        = xs
+ms (x:xs) (y:ys) = if x < y
+    then x:(ms xs (y:ys))
+    else y:(ms (x:xs) ys)
+
+msearch :: Eq a => a -> [a] -> Bool
+msearch _ [] = False
+msearch a (x:[]) = a == x
+msearch a xs = let
+        (x1, x2) = splitAt ((length xs + 1) `div` 2) xs
+        in dnc (msearch a) x1 x2 (||)
+
+-- Assignment 3, Sudoku
 
 main = do
   let (xs,ys) = splitAt 1500  (take 6000
@@ -107,10 +150,25 @@ main = do
   let j = pJackknife _parMap mean rs :: [Float]
   putStrLn $ "jack mean min:  " ++ show (minimum j)
   putStrLn $ "jack mean max:  " ++ show (maximum j)
+
+  -- Assignment 2 
+  let zs = take 600000 (randoms (mkStdGen 211570155)) :: [Integer]
+
+  -- Assignment 3
+  [f] <- getArgs
+  file <- readFile f
+
+  let puzzles = lines file
+  let solutions = (map solve puzzles) `using` (parBuffer 100 rdeepseq)
+
+  evaluate (length puzzles)
+  print (length (filter isJust solutions))
+
   defaultMain
         [
-         bench "jackknife" (nf (pJackknife _parMap mean) rs)
-        --  bench "psort 25" (nf (psort 25) rs)
-        -- bench "psort 50" (nf (psort 50) rs)
-        -- bench "psort" (nf psort rs)
+          bench "jackknife" (nf (pJackknife _parMap mean) rs),
+          bench "built-in sort" (nf sort xs),
+          bench "divide and conquer sort" (nf msort xs),
+          bench "built-in search" (nf (elem 0) xs),
+          bench "divide and conquer search" (nf (msearch 0) xs)
         ]

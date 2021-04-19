@@ -49,6 +49,7 @@ executable LabA-exe
     , criterion
     , parallel
     , monad-par
+    , array
   default-language: Haskell2010
 
 test-suite LabA-test
