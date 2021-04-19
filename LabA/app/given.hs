@@ -145,7 +145,7 @@ main = do
   let rs = crud xs ++ ys
   putStrLn $ "sample mean:    " ++ show (mean rs)
 
-  let j = pJackknife _parMap mean rs :: [Float]
+  let j = jackknife mean rs :: [Float]
   putStrLn $ "jack mean min:  " ++ show (minimum j)
   putStrLn $ "jack mean max:  " ++ show (maximum j)
 
@@ -153,18 +153,18 @@ main = do
   let zs = take 600000 (randoms (mkStdGen 211570155)) :: [Integer]
 
   -- Assignment 3
-  [f] <- getArgs
-  file <- readFile f
+  -- [f] <- getArgs
+  -- file <- readFile f
 
-  let puzzles = lines file
-  let solutions = (map solve puzzles) `using` (parBuffer 100 rdeepseq)
+  -- let puzzles = lines file
+  -- let solutions = (map solve puzzles) `using` (parBuffer 100 rdeepseq)
 
-  evaluate (length puzzles)
-  print (length (filter isJust solutions))
+  -- evaluate (length puzzles)
+  -- print (length (filter isJust solutions))
 
   defaultMain
         [
-          bench "map      (sequential)" (nf (pJackknife map mean) rs)
+          bench "jackknife"             (nf (jackknife  mean) rs),
           bench "pmap     (par, pseq)" (nf (pJackknife pmap mean) rs),
           bench "rpmap    (rpar, rseq)" (nf (pJackknife rpmap mean) rs),
           bench "chunkMap (strategies)" (nf (pJackknife chunkMap mean) rs),
