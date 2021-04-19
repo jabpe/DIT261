@@ -129,7 +129,8 @@ msearch a xs = let
 parBufferChunk :: Int -> Int -> Strategy a -> Strategy [a]
 parBufferChunk bSize cSize strat xs
   | cSize <= 1  = parBuffer bSize strat xs
-  | otherwise   = concat `fmap` (parBuffer bSize) (parListChunk cSize strat) (chunk cSize xs)
+  | otherwise   = concat `fmap`
+    (parBuffer bSize) (parListChunk cSize strat) (chunk cSize xs)
 
 
 chunk :: Int -> [a] -> [[a]]
