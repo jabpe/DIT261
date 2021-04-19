@@ -3,12 +3,12 @@ import System.Random
 import Criterion.Main
 import Control.Parallel
 import Control.Parallel.Strategies
+import Control.Monad.Par
 
 -- code borrowed from the Stanford Course 240h (Functional Systems in Haskell)
 -- I suspect it comes from Bryan O'Sullivan, author of Criterion
 
 data T a = T !a !Int
-
 
 mean :: (RealFrac a) => [a] -> a
 mean = fini . foldl' go (T 0 0)
@@ -29,6 +29,11 @@ jackknife :: ([a] -> b) -> [a] -> [b]
 jackknife f = map f . resamples 500
 
 crud = zipWith (\x a -> sin (x / 300)**2 + a) [0..]
+
+
+-- PREDRAG BOZHOVIKJ
+-- April 2021
+-- LabA
 
 pJackknife :: (([a] -> b) -> [[a]] -> [b]) -> ([a] -> b) -> [a] -> [b]
 pJackknife m f = m f . resamples 500
@@ -51,20 +56,45 @@ rpmap f (x:xs) = runEval $ do
                  return $ fx:mapxs
 
 -- c) strategy
-chunkMap :: NFData  b => (a -> b) -> [a] -> [b]
+chunkMap :: NFData b => (a -> b) -> [a] -> [b]
 chunkMap f x = map f x `using` parListChunk 15 rdeepseq
 
 -- d) Par monad
--- parMap :: NFData b => (a -> b) -> [a] -> Par [b]
--- parMap f as = do
---   ibs <- mapM (spawn . return . f) as
---   mapM get ibs
+chunkList :: Int -> [a] -> [[a]]
+chunkList _ [] = []
+chunkList n xs = as : chunkList n bs where (as,bs) = splitAt n xs
+
+numOfCores :: Int
+numOfCores = 4
+
+_parMap :: NFData b => (a -> b) -> [a] -> [b]
+_parMap f as =
+  runPar $ do
+           ivars <- loop (numOfCores * 64) f as
+           done <- mapM get ivars
+           return $ concat done
+  where
+    loop :: NFData b => Int -> (a -> b) -> [a] -> Par [IVar [b]]
+    -- loop _ _ [] = return []
+    loop 1 f as = do
+                  t <- spawn . return $ map f as
+                  return [t]
+    loop t f as = do
+                  let halfT = t `div` 2
+                  let halfList = (length as + 1) `div` 2
+                  let [left, right] = chunkList halfList as
+                  l <- loop halfT f left
+                  r <- loop halfT f right
+                  return $ l ++ r
 
 -- ASSIGNMENT 2
--- psort reinvented
+-- qsort reinvented with strategies as psort
 psort :: NFData a => Ord a => [a] -> [a]
 psort [] = []
 psort (x:xs) = psort [y | y <-xs, y<x] ++ [x] ++ psort [y | y <-xs, y>=x] `using` parBuffer 100 rdeepseq
+
+-- second divide and conquer a
+
 
 main = do
   let (xs,ys) = splitAt 1500  (take 6000
@@ -74,13 +104,13 @@ main = do
   let rs = crud xs ++ ys
   putStrLn $ "sample mean:    " ++ show (mean rs)
 
-  -- let j = pJackknife chunkMap mean rs :: [Float]
-  -- putStrLn $ "jack mean min:  " ++ show (minimum j)
-  -- putStrLn $ "jack mean max:  " ++ show (maximum j)
+  let j = pJackknife _parMap mean rs :: [Float]
+  putStrLn $ "jack mean min:  " ++ show (minimum j)
+  putStrLn $ "jack mean max:  " ++ show (maximum j)
   defaultMain
         [
-        --  bench "jackknife" (nf (pJackknife chunkMap mean) rs)
+         bench "jackknife" (nf (pJackknife _parMap mean) rs)
         --  bench "psort 25" (nf (psort 25) rs)
         -- bench "psort 50" (nf (psort 50) rs)
-        bench "psort" (nf psort rs)
-         ]
+        -- bench "psort" (nf psort rs)
+        ]

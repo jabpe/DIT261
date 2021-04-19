@@ -48,6 +48,7 @@ executable LabA-exe
     , random
     , criterion
     , parallel
+    , monad-par
   default-language: Haskell2010
 
 test-suite LabA-test
