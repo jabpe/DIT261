@@ -63,37 +63,24 @@ rpmap f (x:xs) = runEval $ do
 
 -- c) strategy
 chunkMap :: NFData b => (a -> b) -> [a] -> [b]
-chunkMap f x = map f x `using` parListChunk 15 rdeepseq
+chunkMap f x = map f x `using` parListChunk 100 rdeepseq
 
 -- d) Par monad
 chunkList :: Int -> [a] -> [[a]]
 chunkList _ [] = []
 chunkList n xs = as : chunkList n bs where (as,bs) = splitAt n xs
 
---  par monad implementation
-mmap :: NFData b => (a -> b) -> [a] -> [b]
-mmap f []     = []
-mmap f (x:xs) = runPar $ do
-  i <- new
-  j <- new
-  fork (put i (f x))
-  fork (put j (mmap f xs))
-  x'  <- get i
-  xs'  <- get j
-  return (x':xs')
-
 numOfCores :: Int
 numOfCores = 4
 
 _parMap :: NFData b => (a -> b) -> [a] -> [b]
 _parMap f as =
-  runPar $ do
+  runPar $ do                       -- v  number of IVars per core
            ivars <- loop (numOfCores * 64) f as
            done <- mapM get ivars
            return $ concat done
   where
     loop :: NFData b => Int -> (a -> b) -> [a] -> Par [IVar [b]]
-    -- loop _ _ [] = return []
     loop 1 f as = do
                   t <- spawn . return $ map f as
                   return [t]
@@ -139,6 +126,16 @@ msearch a xs = let
 
 -- Assignment 3, Sudoku
 
+parBufferChunk :: Int -> Int -> Strategy a -> Strategy [a]
+parBufferChunk bSize cSize strat xs
+  | cSize <= 1  = parBuffer bSize strat xs
+  | otherwise   = concat `fmap` (parBuffer bSize) (parListChunk cSize strat) (chunk cSize xs)
+
+
+chunk :: Int -> [a] -> [[a]]
+chunk _ [] = []
+chunk n xs = as : chunk n bs where (as,bs) = splitAt n xs
+
 main = do
   let (xs,ys) = splitAt 1500  (take 6000
                                (randoms (mkStdGen 211570155)) :: [Float] )
@@ -166,7 +163,11 @@ main = do
 
   defaultMain
         [
-          bench "jackknife" (nf (pJackknife _parMap mean) rs),
+          bench "map      (sequential)" (nf (pJackknife map mean) rs)
+          bench "pmap     (par, pseq)" (nf (pJackknife pmap mean) rs),
+          bench "rpmap    (rpar, rseq)" (nf (pJackknife rpmap mean) rs),
+          bench "chunkMap (strategies)" (nf (pJackknife chunkMap mean) rs),
+          bench "_parMap  (Par monad)" (nf (pJackknife _parMap mean) rs),
           bench "built-in sort" (nf sort xs),
           bench "divide and conquer sort" (nf msort xs),
           bench "built-in search" (nf (elem 0) xs),
