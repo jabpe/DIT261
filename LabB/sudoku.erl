@@ -214,7 +214,19 @@ solve_one([]) ->
     exit(no_solution);
 solve_one([M]) ->
     solve_refined(M);
-solve_one(M) -> spawn_solve_one(M).
+solve_one([M|Ms]) -> 
+    Threshold = 0,
+    Td = hard(M),
+    % Difficulty = cust_hard(M),
+    % io:format("Matrix: ~p\n", [M]),
+    % io:format("Difficulty: ~p\n", [Difficulty]),
+    % io:format("Old Difficulty: ~p\n", [Td]),
+    if
+        Td < Threshold ->
+            solve_one_seq([M|Ms]);
+        true ->
+            spawn_solve_one([M|Ms])
+    end.
 
 spawn_solve_one(Ms) ->
     Parent = self(),
@@ -226,10 +238,22 @@ spawn_solve_one(Ms) ->
         Solution -> Solution
     end.
 
+solve_one_seq([]) ->
+    exit(no_solution);
+solve_one_seq([M]) ->
+    solve_refined(M);
+solve_one_seq([M|Ms]) ->
+    case catch solve_refined(M) of
+	{'EXIT',no_solution} ->
+	    solve_one(Ms);
+	Solution ->
+	    Solution
+    end.
+
 %% benchmarks
 
 % -define(EXECUTIONS,100).
--define(EXECUTIONS,50).
+-define(EXECUTIONS,20).
 
 bm(F) ->
     {T,_} = timer:tc(?MODULE,repeat,[F]),
@@ -257,3 +281,9 @@ valid_row(Row) ->
 
 valid_solution(M) ->
     valid_rows(M) andalso valid_rows(transpose(M)) andalso valid_rows(blocks(M)).
+
+cust_hard(M) ->
+    lists:sum(lists:map(fun(Row) -> length(lists:filter(fun(E) -> E == 0 end, Row)) end, M)).
+
+% cust_hard(Puzzles) ->
+%     [{Name,lists:sum(lists:map(fun(Row) -> length(lists:filter(fun(E) -> E == 0 end, Row)) end, M))} || {Name,M} <- Puzzles].
