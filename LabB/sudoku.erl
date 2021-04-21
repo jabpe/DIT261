@@ -1,6 +1,7 @@
--module(sudoku).
-%-include_lib("eqc/include/eqc.hrl").
--compile(export_all).
+    -module(sudoku).
+    %-include_lib("eqc/include/eqc.hrl").
+    -c(tmp).
+    -compile(export_all).
 
 %% %% generators
 
@@ -166,12 +167,6 @@ guess(M) ->
 %% given a matrix, guess an element to form a list of possible
 %% extended matrices, easiest problem first.
 
-spawn_map(fun f, l) ->
-    Parent = self(),
-    lists:map(fun({Name,M}) -> spawn_link(fun() -> Parent ! {Name, bm(fun()->solve(M) end)} end) end, [{Name,M} || {Name,M} <- Puzzles]),
-    lists:map(fun ({_Name,_M}) -> receive Msg -> {_Name, _M, Msg} end end, [{_Name,_M} || {_Name,_M} <- Puzzles] ).
-
-
 guesses(M) ->
     {I,J,Guesses} = guess(M),
     Ms = [catch refine(update_element(M,I,J,G)) || G <- Guesses],
@@ -197,6 +192,7 @@ update_nth(I,X,Xs) ->
 
 %% solve a puzzle
 
+
 solve(M) ->
     Solution = solve_refined(refine(fill(M))),
     case valid_solution(Solution) of
@@ -218,17 +214,22 @@ solve_one([]) ->
     exit(no_solution);
 solve_one([M]) ->
     solve_refined(M);
-solve_one([M|Ms]) ->
-    case catch solve_refined(M) of
-	{'EXIT',no_solution} ->
-	    solve_one(Ms);
-	Solution ->
-	    Solution
+solve_one(M) -> spawn_solve_one(M).
+
+spawn_solve_one(Ms) ->
+    Parent = self(),
+    spawn_link(fun () -> 
+        tmp:receive_map(fun solve_refined/1, Ms, Parent)
+    end),
+    receive
+        no_solution -> exit({invalid_solution});
+        Solution -> Solution
     end.
 
 %% benchmarks
 
--define(EXECUTIONS,100).
+% -define(EXECUTIONS,100).
+-define(EXECUTIONS,50).
 
 bm(F) ->
     {T,_} = timer:tc(?MODULE,repeat,[F]),
