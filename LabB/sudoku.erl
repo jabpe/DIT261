@@ -166,6 +166,12 @@ guess(M) ->
 %% given a matrix, guess an element to form a list of possible
 %% extended matrices, easiest problem first.
 
+spawn_map(fun f, l) ->
+    Parent = self(),
+    lists:map(fun({Name,M}) -> spawn_link(fun() -> Parent ! {Name, bm(fun()->solve(M) end)} end) end, [{Name,M} || {Name,M} <- Puzzles]),
+    lists:map(fun ({_Name,_M}) -> receive Msg -> {_Name, _M, Msg} end end, [{_Name,_M} || {_Name,_M} <- Puzzles] ).
+
+
 guesses(M) ->
     {I,J,Guesses} = guess(M),
     Ms = [catch refine(update_element(M,I,J,G)) || G <- Guesses],
