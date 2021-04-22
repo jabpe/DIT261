@@ -1,7 +1,8 @@
-    -module(sudoku).
-    %-include_lib("eqc/include/eqc.hrl").
-    -c(tmp).
-    -compile(export_all).
+-module(sudoku).
+%-include_lib("eqc/include/eqc.hrl").
+-c(tmp).
+-c(par).
+-compile(export_all).
 
 %% %% generators
 
@@ -215,7 +216,7 @@ solve_one([]) ->
 solve_one([M]) ->
     solve_refined(M);
 solve_one([M|Ms]) -> 
-    Threshold = 0,
+    Threshold = 200,
     Td = hard(M),
     % Difficulty = cust_hard(M),
     % io:format("Matrix: ~p\n", [M]),
@@ -228,14 +229,22 @@ solve_one([M|Ms]) ->
             spawn_solve_one([M|Ms])
     end.
 
-spawn_solve_one(Ms) ->
-    Parent = self(),
-    spawn_link(fun () -> 
-        tmp:receive_map(fun solve_refined/1, Ms, Parent)
+spawn_solve_one([]) ->
+    exit(no_solution);
+
+spawn_solve_one([M]) ->
+    solve_refined(M);
+
+spawn_solve_one([M|Ms]) ->
+    Promise = par:speculate(fun () -> 
+        solve_one(Ms)
     end),
-    receive
-        no_solution -> exit(no_solution);
-        Solution -> Solution
+    case catch solve_refined(M) of
+        {'EXIT',no_solution} ->
+            par:await(Promise);
+        Solution ->
+            par:cancel(Promise),
+            Solution
     end.
 
 solve_one_seq([]) ->
@@ -245,7 +254,7 @@ solve_one_seq([M]) ->
 solve_one_seq([M|Ms]) ->
     case catch solve_refined(M) of
 	{'EXIT',no_solution} ->
-	    solve_one(Ms);
+	    solve_one_seq(Ms);
 	Solution ->
 	    Solution
     end.
