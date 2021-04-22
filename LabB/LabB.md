@@ -4,7 +4,7 @@ Predrag Bozhovikj, Erik Sievers
 
 ## Part one: parallelising the multiple puzzles
 
-Running the benchmark takes 77.02 seconds. When we parallelize the solving of the various puzzles, the speedup is fairly small: solving the puzzles in parallel takes 47.50s. The reason can be found when looking at how long each puzzle takes to solve:
+For 100 benchmark runs, running the benchmark takes 77.02 seconds. When we parallelize the solving of the various puzzles, the speedup is fairly small: solving the puzzles in parallel takes 47.50s. The reason can be found when looking at how long each puzzle takes to solve:
 ```
 {77023483,
  [{wildcat,0.42735},

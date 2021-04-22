@@ -270,7 +270,7 @@ repeat(F) ->
 benchmarks(Puzzles) ->
     Parent = self(),
     lists:map(fun({Name,M}) -> spawn_link(fun() -> Parent ! {Name, bm(fun()->solve(M) end)} end) end, [{Name,M} || {Name,M} <- Puzzles]),
-    lists:map(fun ({_Name,_M}) -> receive Msg -> {_Name, _M, Msg} end end, [{_Name,_M} || {_Name,_M} <- Puzzles] ).
+    lists:map(fun ({_Name,_M}) -> receive Msg -> Msg end end, [{_Name,_M} || {_Name,_M} <- Puzzles] ).
 
 % benchmarks(Puzzles) ->
 %     [{Name,bm(fun()->solve(M) end)} || {Name,M} <- Puzzles].
