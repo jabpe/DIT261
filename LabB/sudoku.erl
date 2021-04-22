@@ -234,7 +234,7 @@ spawn_solve_one(Ms) ->
         tmp:receive_map(fun solve_refined/1, Ms, Parent)
     end),
     receive
-        no_solution -> exit({invalid_solution});
+        no_solution -> exit(no_solution);
         Solution -> Solution
     end.
 
