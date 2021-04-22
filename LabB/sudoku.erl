@@ -216,8 +216,8 @@ solve_one([]) ->
 solve_one([M]) ->
     solve_refined(M);
 solve_one([M|Ms]) -> 
-    Threshold = 200,
-    Td = hard(M),
+    Threshold = 50,
+    Td = 0, %hard(M),
     % Difficulty = cust_hard(M),
     % io:format("Matrix: ~p\n", [M]),
     % io:format("Difficulty: ~p\n", [Difficulty]),
@@ -262,7 +262,7 @@ solve_one_seq([M|Ms]) ->
 %% benchmarks
 
 % -define(EXECUTIONS,100).
--define(EXECUTIONS,20).
+-define(EXECUTIONS,100).
 
 bm(F) ->
     {T,_} = timer:tc(?MODULE,repeat,[F]),
@@ -277,6 +277,7 @@ benchmarks(Puzzles) ->
     lists:map(fun ({_Name,_M}) -> receive Msg -> {_Name, _M, Msg} end end, [{_Name,_M} || {_Name,_M} <- Puzzles] ).
 
 benchmarks() ->
+  par:start(),
   {ok,Puzzles} = file:consult("problems.txt"),
   timer:tc(?MODULE,benchmarks,[Puzzles]).
 		      
