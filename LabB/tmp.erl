@@ -31,7 +31,8 @@ receive_map(F, XS, Pid) ->
                     Solution
                 end
             end,
-        Refs).
+        Refs),
+    Pid ! no_solution.
     % lists:any(fun(X) -> X end, ps).
 
 on_exit(Pid,Fun) ->
