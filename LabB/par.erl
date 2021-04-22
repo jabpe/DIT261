@@ -16,58 +16,62 @@ start() ->
 % use the resource or not based on the amount of workers
 pool(Workers) ->
     receive 
-        {'EXIT', Pid, Reason} ->
+        {'EXIT', Pid, _Reason} ->
             case lists:member(Pid, Workers) of
                 true ->
                     pool(lists:delete(Pid, Workers));
                 false ->
-                    exit(normal)
+                    ok
             end;
         % Client is the process requesting something to be put in the pool
-        {spawn, Client} ->
+        {spawn, Client, Ref} ->
             % Reserving one thread for the main thread to not block the depth first search
             Limit = erlang:system_info(schedulers) - 1,
-            if length(workers) < Limit ->
-                    W = spawn_link(fun () -> worker(Client) end),
-                    Client ! {ok, W},
+            if
+                length(Workers) < Limit ->
+                    W = spawn_link(fun () -> worker(Client, Ref) end),
+                    Client ! {ok, W, Ref},
                     pool([W|Workers]);
                 true ->
                 % Return "full"
-                Client ! full,
-                pool(Workers)
+                    Client ! {full, Ref},
+                    pool(Workers)
                 end
             end.
 
 % Send a PID to a worker
-worker(Client) ->
+worker(Client, Ref) ->
     receive
-        {work, F} -> Client ! F()
+        {work, F, Ref} -> Client ! {value, F(), Ref}
     end.
 
 speculate(F) ->
-    workerpool ! {spawn, self()},
+    Ref = make_ref(),
+    workerpool ! {spawn, self(), Ref},
     receive 
-        {ok, W} ->
+        {ok, W, Ref} ->
+            % Don't crash on spawned process crash. Delay it until await.
+            process_flag(trap_exit,true),
             link(W),
-            W ! {work, F},
-            {working, W};
-        full -> 
+            W ! {work, F, Ref},
+            {working, W, Ref};
+        {full, Ref} -> 
             {full, F}
     end.
 
 await({full, F}) ->
     F();
-await({working, W}) ->
+await({working, W, Ref}) ->
     receive
-        {W, Res} ->
+        {value, Res, Ref} ->
             Res;
         {'EXIT',W, Reason} ->
             exit(Reason)
     end.
 
-cancel({full, F}) ->
+cancel({full, _F}) ->
     ok;
 
-cancel({working, Pid}) ->
+cancel({working, Pid, _Ref}) ->
     unlink(Pid),
     exit(Pid, kill).

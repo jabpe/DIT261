@@ -216,12 +216,8 @@ solve_one([]) ->
 solve_one([M]) ->
     solve_refined(M);
 solve_one([M|Ms]) -> 
-    Threshold = 50,
-    Td = 0, %hard(M),
-    % Difficulty = cust_hard(M),
-    % io:format("Matrix: ~p\n", [M]),
-    % io:format("Difficulty: ~p\n", [Difficulty]),
-    % io:format("Old Difficulty: ~p\n", [Td]),
+    Threshold = 200,
+    Td = hard(M),
     if
         Td < Threshold ->
             solve_one_seq([M|Ms]);
@@ -276,8 +272,11 @@ benchmarks(Puzzles) ->
     lists:map(fun({Name,M}) -> spawn_link(fun() -> Parent ! {Name, bm(fun()->solve(M) end)} end) end, [{Name,M} || {Name,M} <- Puzzles]),
     lists:map(fun ({_Name,_M}) -> receive Msg -> {_Name, _M, Msg} end end, [{_Name,_M} || {_Name,_M} <- Puzzles] ).
 
+% benchmarks(Puzzles) ->
+%     [{Name,bm(fun()->solve(M) end)} || {Name,M} <- Puzzles].
+
 benchmarks() ->
-  par:start(),
+%   par:start(),
   {ok,Puzzles} = file:consult("problems.txt"),
   timer:tc(?MODULE,benchmarks,[Puzzles]).
 		      
@@ -297,3 +296,4 @@ cust_hard(M) ->
 
 % cust_hard(Puzzles) ->
 %     [{Name,lists:sum(lists:map(fun(Row) -> length(lists:filter(fun(E) -> E == 0 end, Row)) end, M))} || {Name,M} <- Puzzles].
+
