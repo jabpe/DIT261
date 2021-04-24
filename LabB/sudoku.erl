@@ -99,28 +99,8 @@ refine(M) ->
 	    refine(NewM)
     end.
 
-refine_rows(Ms) ->
-    Parent = self(),
-    Refs = lists:map(fun(M) ->
-        Ref = make_ref(),
-        spawn_link(fun () -> 
-            case catch refine_row(M) of
-                {'EXIT',no_solution} ->
-                    Parent ! {Ref, no_solution};
-                Solution ->
-                    Parent ! {Ref, Solution}
-            end
-        end),
-        Ref
-    end,Ms),
-    lists:map(fun (Ref) ->
-        receive
-            {Ref,no_solution} ->
-                exit(no_solution);
-            {Ref, Solution} ->
-                Solution
-        end
-    end, Refs).
+refine_rows(M) ->
+    lists:map(fun refine_row/1,M).
 
 refine_row(Row) ->
     Entries = entries(Row),
@@ -235,16 +215,15 @@ solve_one([]) ->
     exit(no_solution);
 solve_one([M]) ->
     solve_refined(M);
-solve_one([M|Ms]) ->
-    solve_one_seq([M|Ms]).
-    % Threshold = 200,
-    % Td = hard(M),
-    % if
-    %     Td < Threshold ->
-    %         solve_one_seq([M|Ms]);
-    %     true ->
-    %         spawn_solve_one([M|Ms])
-    % end.
+solve_one([M|Ms]) -> 
+    Threshold = 200,
+    Td = hard(M),
+    if
+        Td < Threshold ->
+            solve_one_seq([M|Ms]);
+        true ->
+            spawn_solve_one([M|Ms])
+    end.
 
 spawn_solve_one([]) ->
     exit(no_solution);
@@ -279,7 +258,7 @@ solve_one_seq([M|Ms]) ->
 %% benchmarks
 
 % -define(EXECUTIONS,100).
--define(EXECUTIONS,1).
+-define(EXECUTIONS,100).
 
 bm(F) ->
     {T,_} = timer:tc(?MODULE,repeat,[F]),
