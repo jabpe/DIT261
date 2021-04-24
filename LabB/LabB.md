@@ -22,9 +22,14 @@ For 100 benchmark runs, running the benchmark takes 77.02 seconds. When we paral
 
   Results:
   * Sequential: 77s
-  * Parallel search: 59s
-  * Parallel search + parallel refine: 144s
-  * Only refine:
+  * Parallel search: 59s, speedup 30%
+  <!-- * Parallel search + parallel refine: 144s -->
+  * Parallel refine: 80.71s, speedup -5%
+  * Parallel refine_rows: Approx. 36 minutes, speedup -12'733%
+
+After trying various implementations, our results seem to indicate that the most promising parallelism we can find is doing the search for a solution in parallel. The other forms of parallelism seem to be too finely granular to be worthwhile and actively worsen the performance.
+
+The benchmarks were run on a MacBook Pro with two cores
 
   After implementing worker pools and splitting of the initial decision tree into one process for each, the number of processes jumps drastically without a significant speedup in execution (46.4s), as can be seen in percept.
   ![](ConcurrentInitialTreeSplit.png) 
