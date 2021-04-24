@@ -1,5 +1,7 @@
 -module(sudoku).
 %-include_lib("eqc/include/eqc.hrl").
+-c(tmp).
+-c(par).
 -compile(export_all).
 
 %% %% generators
@@ -191,6 +193,7 @@ update_nth(I,X,Xs) ->
 
 %% solve a puzzle
 
+
 solve(M) ->
     Solution = solve_refined(refine(fill(M))),
     case valid_solution(Solution) of
@@ -212,16 +215,49 @@ solve_one([]) ->
     exit(no_solution);
 solve_one([M]) ->
     solve_refined(M);
-solve_one([M|Ms]) ->
+solve_one([M|Ms]) -> 
+    Threshold = 200,
+    Td = hard(M),
+    if
+        Td < Threshold ->
+            solve_one_seq([M|Ms]);
+        true ->
+            spawn_solve_one([M|Ms])
+    end.
+
+spawn_solve_one([]) ->
+    exit(no_solution);
+
+spawn_solve_one([M]) ->
+    solve_refined(M);
+
+spawn_solve_one([M|Ms]) ->
+    Promise = par:speculate(fun () -> 
+        solve_one(Ms)
+    end),
+    case catch solve_refined(M) of
+        {'EXIT',no_solution} ->
+            par:await(Promise);
+        Solution ->
+            par:cancel(Promise),
+            Solution
+    end.
+
+solve_one_seq([]) ->
+    exit(no_solution);
+solve_one_seq([M]) ->
+    solve_refined(M);
+solve_one_seq([M|Ms]) ->
     case catch solve_refined(M) of
 	{'EXIT',no_solution} ->
-	    solve_one(Ms);
+	    solve_one_seq(Ms);
 	Solution ->
 	    Solution
     end.
 
 %% benchmarks
 
+% -define(EXECUTIONS,100).
 -define(EXECUTIONS,100).
 
 bm(F) ->
@@ -234,9 +270,13 @@ repeat(F) ->
 benchmarks(Puzzles) ->
     Parent = self(),
     lists:map(fun({Name,M}) -> spawn_link(fun() -> Parent ! {Name, bm(fun()->solve(M) end)} end) end, [{Name,M} || {Name,M} <- Puzzles]),
-    lists:map(fun ({_Name,_M}) -> receive Msg -> {_Name, _M, Msg} end end, [{_Name,_M} || {_Name,_M} <- Puzzles] ).
+    lists:map(fun ({_Name,_M}) -> receive Msg -> Msg end end, [{_Name,_M} || {_Name,_M} <- Puzzles] ).
+
+% benchmarks(Puzzles) ->
+%     [{Name,bm(fun()->solve(M) end)} || {Name,M} <- Puzzles].
 
 benchmarks() ->
+%   par:start(),
   {ok,Puzzles} = file:consult("problems.txt"),
   timer:tc(?MODULE,benchmarks,[Puzzles]).
 		      
@@ -250,3 +290,10 @@ valid_row(Row) ->
 
 valid_solution(M) ->
     valid_rows(M) andalso valid_rows(transpose(M)) andalso valid_rows(blocks(M)).
+
+cust_hard(M) ->
+    lists:sum(lists:map(fun(Row) -> length(lists:filter(fun(E) -> E == 0 end, Row)) end, M)).
+
+% cust_hard(Puzzles) ->
+%     [{Name,lists:sum(lists:map(fun(Row) -> length(lists:filter(fun(E) -> E == 0 end, Row)) end, M))} || {Name,M} <- Puzzles].
+
