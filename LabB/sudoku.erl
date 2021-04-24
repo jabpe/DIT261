@@ -170,11 +170,15 @@ guess(M) ->
 
 guesses(M) ->
     {I,J,Guesses} = guess(M),
+    Tmp = lists:map(fun (G) ->
+        update_element(M,I,J,G)
+    end, Guesses
+    ),
     Futures = lists:map(fun(G) ->
         par:speculate(fun() ->
-            refine(update_element(M,I,J,G))
+            refine(G)
         end)
-    end, Guesses),
+    end, Tmp),
     % Ms = [catch refine(update_element(M,I,J,G)) || G <- Guesses],
     Ms = lists:map(fun (F) ->
             case catch par:await(F) of
@@ -271,7 +275,7 @@ solve_one_seq([M|Ms]) ->
 %% benchmarks
 
 % -define(EXECUTIONS,100).
--define(EXECUTIONS,100).
+-define(EXECUTIONS,50).
 
 bm(F) ->
     {T,_} = timer:tc(?MODULE,repeat,[F]),
