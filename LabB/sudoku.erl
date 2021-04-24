@@ -170,7 +170,20 @@ guess(M) ->
 
 guesses(M) ->
     {I,J,Guesses} = guess(M),
-    Ms = [catch refine(update_element(M,I,J,G)) || G <- Guesses],
+    Futures = lists:map(fun(G) ->
+        par:speculate(fun() ->
+            refine(update_element(M,I,J,G))
+        end)
+    end, Guesses),
+    % Ms = [catch refine(update_element(M,I,J,G)) || G <- Guesses],
+    Ms = lists:map(fun (F) ->
+            case catch par:await(F) of
+                {'EXIT', _Reason} ->
+                    {'EXIT', _Reason};
+                Solution ->
+                    Solution 
+            end
+        end, Futures),
     SortedGuesses =
 	lists:sort(
 	  [{hard(NewM),NewM}
@@ -268,9 +281,7 @@ repeat(F) ->
     [F() || _ <- lists:seq(1,?EXECUTIONS)].
 
 benchmarks(Puzzles) ->
-    Parent = self(),
-    lists:map(fun({Name,M}) -> spawn_link(fun() -> Parent ! {Name, bm(fun()->solve(M) end)} end) end, [{Name,M} || {Name,M} <- Puzzles]),
-    lists:map(fun ({_Name,_M}) -> receive Msg -> Msg end end, [{_Name,_M} || {_Name,_M} <- Puzzles] ).
+    [{Name,bm(fun()->solve(M) end)} || {Name,M} <- Puzzles].
 
 % benchmarks(Puzzles) ->
 %     [{Name,bm(fun()->solve(M) end)} || {Name,M} <- Puzzles].
@@ -291,6 +302,7 @@ valid_row(Row) ->
 valid_solution(M) ->
     valid_rows(M) andalso valid_rows(transpose(M)) andalso valid_rows(blocks(M)).
 
+% Reutrns the number of 0s in a puzzle
 cust_hard(M) ->
     lists:sum(lists:map(fun(Row) -> length(lists:filter(fun(E) -> E == 0 end, Row)) end, M)).
 
