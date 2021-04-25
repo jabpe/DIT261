@@ -4,9 +4,12 @@ Predrag Bozhovikj, Erik Sievers
 
 ## Part one: parallelising the multiple puzzles
 
-For 100 benchmark runs, running the benchmark takes 77.02 seconds. When we parallelize the solving of the various puzzles, the speedup is fairly small: solving the puzzles in parallel takes 47.50s. The reason can be found when looking at how long each puzzle takes to solve:
+We ran the benchmarks on two different machines: one with an i7 Dual-Core processor and one with an i7 Quad-Core processor.
+
+For 100 benchmark runs, running the benchmark takes 77.02 seconds on the Dual-Core and 81.77 seconds on the quad core. When we parallelize the solving of the various puzzles, the speedup is fairly small: solving the puzzles in parallel takes 47.50s. The reason can be found when looking at how long each puzzle takes to solve:
 ```
 i7 Dual-Core
+===
 {77023483,
  [{wildcat,0.42735},
   {diabolical,53.09819},
@@ -17,6 +20,7 @@ i7 Dual-Core
   {seventeen,59.704879999999996}]}
 
 i7 Quad-Core
+===
 {81769956,
  [{wildcat,0.47587},
   {diabolical,65.51498000000001},
@@ -42,9 +46,9 @@ We tried three different approaches to parallelising the solver:
   * Parallel refine_rows: Approx. 36 minutes (running it for 1 execution instead of 100 took 18s), speedup -12'733%
   * Parallel search: 59s, speedup 30%
   <!-- * Parallel search + parallel refine: 144s -->
-  * Parallel `guesses`: 80.71s, speedup -5%
+  * Parallel `guesses`: 80.71s on the Dual-core
 
-The benchmarks were run on a MacBook Pro with a Dual-Core Intel Core i7 processor with HyperThreading and 16GB of RAM.
+The benchmarks were run on a MacBook Pro with a Dual-Core Intel Core i7 processor with 16GB of RAM.
 
 After trying various implementations, our results seem to indicate that the most promising parallelism we can find is doing the search for a solution in parallel. The other forms of parallelism seem to be too finely granular to be worthwhile and actively worsen the performance. 
 
@@ -59,6 +63,19 @@ Afterwards, we tried running the sequential benchmark as well as the parallel se
   {challenge1,198.61944},
   {extreme,13.72321},
   {seventeen,58.891529999999996}]}
+```
+
+Next we tried running parallel `guesses`
+
+```
+{119139678,
+ [{wildcat,0.47981},
+  {diabolical,85.23127000000001},
+  {vegard_hanssen,309.23971},
+  {challenge,61.12294},
+  {challenge1,560.8118499999999},
+  {extreme,109.97156},
+  {seventeen,64.53935}]}
 ```
 
 <!-- After implementing worker pools and splitting of the initial decision tree into one process for each, the number of processes jumps drastically without a significant speedup in execution (46.4s), as can be seen in percept. -->
