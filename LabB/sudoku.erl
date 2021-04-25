@@ -170,20 +170,38 @@ guess(M) ->
 
 guesses(M) ->
     {I,J,Guesses} = guess(M),
-    Futures = lists:map(fun(G) ->
-        par:speculate(fun() ->
-            refine(update_element(M,I,J,G))
-        end)
+    Ms = [catch refine(update_element(M,I,J,G)) || G <- Guesses],
+    SortedGuesses =
+	lists:sort(
+	  [{hard(NewM),NewM}
+	   || NewM <- Ms,
+	      not is_exit(NewM)]),
+    [G || {_,G} <- SortedGuesses].
+
+guesses_par(M) ->
+    {I,J,Guesses} = guess(M),
+    Parent =  self(),
+    Refs = lists:map(fun(G) ->
+        Ref = make_ref(),
+        spawn_link(fun () ->
+            case catch refine(update_element(M,I,J,G)) of
+                {'EXIT', _Reason} ->
+                    Parent ! {Ref, no_solution};
+                Res ->
+                    Parent ! {Ref, Res}
+            end
+        end),
+        Ref
     end, Guesses),
     % Ms = [catch refine(update_element(M,I,J,G)) || G <- Guesses],
-    Ms = lists:map(fun (F) ->
-            case catch par:await(F) of
-                {'EXIT', _Reason} ->
-                    {'EXIT', _Reason};
-                Solution ->
-                    Solution 
+    Ms = lists:map(fun (Ref) ->
+            receive
+                {Ref, no_solution} ->
+                    {'EXIT', no_solution};
+                {Ref, Res} ->
+                    Res
             end
-        end, Futures),
+        end, Refs),
     SortedGuesses =
 	lists:sort(
 	  [{hard(NewM),NewM}
@@ -221,7 +239,7 @@ solve_refined(M) ->
 	true ->
 	    M;
 	false ->
-	    solve_one(guesses(M))
+	    solve_one(guesses_par(M))
     end.
 
 solve_one([]) ->
@@ -229,14 +247,15 @@ solve_one([]) ->
 solve_one([M]) ->
     solve_refined(M);
 solve_one([M|Ms]) -> 
-    Threshold = 200,
-    Td = 0,
-    if
-        Td < Threshold ->
-            solve_one_seq([M|Ms]);
-        true ->
-            spawn_solve_one([M|Ms])
-    end.
+    solve_one_seq([M|Ms]).
+    % Threshold = 200,
+    % Td = 0,
+    % if
+    %     Td < Threshold ->
+    %         solve_one_seq([M|Ms]);
+    %     true ->
+    %         spawn_solve_one([M|Ms])
+    % end.
 
 spawn_solve_one([]) ->
     exit(no_solution);
