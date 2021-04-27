@@ -239,7 +239,7 @@ solve_refined(M) ->
 	true ->
 	    M;
 	false ->
-	    solve_one(guesses_par(M))
+	    solve_one(guesses(M))
     end.
 
 solve_one([]) ->
@@ -247,7 +247,7 @@ solve_one([]) ->
 solve_one([M]) ->
     solve_refined(M);
 solve_one([M|Ms]) -> 
-    solve_one_seq([M|Ms]).
+    spawn_solve_one([M|Ms]).
     % Threshold = 200,
     % Td = 0,
     % if
@@ -256,6 +256,41 @@ solve_one([M|Ms]) ->
     %     true ->
     %         spawn_solve_one([M|Ms])
     % end.
+
+solve_par(M) ->
+    RootPid = self(),
+    MaxDepth = 3,
+    Ref = make_ref(),
+    ChildPid = spawn_link(fun() ->
+        solve_refined_par(refine(fill(M)), RootPid, Ref, 0, MaxDepth)
+    end),
+    receive {Ref, Solution} ->
+        exit(ChildPid, kill),
+        Solution
+    end.
+
+solve_refined_par(M, RootPid, Ref, Depth, MaxDepth) ->
+    case solved(M) andalso valid_solution(refine(fill(M))) of
+	true ->
+	    RootPid ! {Ref, M};
+	false ->
+        Guesses = guesses(M),
+        if Depth < MaxDepth andalso length(Guesses) > 1 ->
+            [ spawn_link(fun() -> catch solve_refined_par(Guess, RootPid, Ref, Depth+1, MaxDepth) end) || Guess <- Guesses ];
+         true ->
+            solve_one_par(Guesses, RootPid, Ref, Depth, MaxDepth)
+        end
+    end.
+
+solve_one_par([], _RootPid, _Ref, _Depth, _MaxDepth) ->
+    exit(no_solution);
+solve_one_par([M], RootPid, Ref, Depth, MaxDepth) ->
+    solve_refined_par(M, RootPid, Ref, Depth, MaxDepth);
+solve_one_par([M|Ms], RootPid, Ref, Depth, MaxDepth) -> 
+    case catch solve_refined_par(M, RootPid, Ref, Depth, MaxDepth) of
+	{'EXIT', no_solution} ->
+        solve_one_par(Ms, RootPid, Ref, Depth, MaxDepth)
+    end.
 
 spawn_solve_one([]) ->
     exit(no_solution);
@@ -300,7 +335,7 @@ repeat(F) ->
     [F() || _ <- lists:seq(1,?EXECUTIONS)].
 
 benchmarks(Puzzles) ->
-    [{Name,bm(fun()->solve(M) end)} || {Name,M} <- Puzzles].
+    [{Name,bm(fun()->solve_par(M) end)} || {Name,M} <- Puzzles].
 
 % benchmarks(Puzzles) ->
 %     [{Name,bm(fun()->solve(M) end)} || {Name,M} <- Puzzles].
