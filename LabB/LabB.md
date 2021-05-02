@@ -55,7 +55,7 @@ We ran the benchmark with two different computers: one with an i7 Dual-Core proc
 |                         Sequential |    77s    |    81s    |
 |                  Parallel problems |    48s    |    55s    |
 | Parallel search w/ `par:speculate` |    59s    |    41s    |
-|    Parallel search w/ `spawn_link` |           |    70s    |
+|    Parallel search w/ `spawn_link` |    89s    |    70s    |
 |                     Parallel guess |   115s    |    92s    |
 |                    Parallel refine |   ~31m    |   ~38m    |
 
@@ -106,20 +106,44 @@ c(sudoku). sudoku:benchmarks_par().
 .final-results tr:nth-child(7) td:nth-child(2) { background: green; color: white; }
 .final-results tr:nth-child(7) td:nth-child(3) { background: yellow; color: black; }
 .final-results tr:nth-child(7) td:nth-child(4) { background: red; color: white; }
+
+.final-results tr:nth-child(1) td:nth-child(5) { background: green; color: white; }
+.final-results tr:nth-child(1) td:nth-child(6) { background: red; color: white; }
+.final-results tr:nth-child(1) td:nth-child(7) { background: yellow; color: black; }
+.final-results tr:nth-child(2) td:nth-child(5) { background: red; color: white; }
+.final-results tr:nth-child(2) td:nth-child(6) { background: yellow; color: black; }
+.final-results tr:nth-child(2) td:nth-child(7) { background: green; color: white; }
+.final-results tr:nth-child(3) td:nth-child(5) { background: red; color: white; }
+.final-results tr:nth-child(3) td:nth-child(6) { background: yellow; color: black; }
+.final-results tr:nth-child(3) td:nth-child(7) { background: green; color: white; }
+.final-results tr:nth-child(4) td:nth-child(5) { background: yellow; color: black; }
+.final-results tr:nth-child(4) td:nth-child(6) { background: red; color: white; }
+.final-results tr:nth-child(4) td:nth-child(7) { background: green; color: white; }
+.final-results tr:nth-child(5) td:nth-child(5) { background: yellow; color: black; }
+.final-results tr:nth-child(5) td:nth-child(6) { background: red; color: white; }
+.final-results tr:nth-child(5) td:nth-child(7) { background: green; color: white; }
+.final-results tr:nth-child(6) td:nth-child(5) { background: green; color: white; }
+.final-results tr:nth-child(6) td:nth-child(6) { background: yellow; color: black; }
+.final-results tr:nth-child(6) td:nth-child(7) { background: red; color: white; }
+.final-results tr:nth-child(7) td:nth-child(5) { background: yellow; color: black; }
+.final-results tr:nth-child(7) td:nth-child(6) { background: green; color: white; }
+.final-results tr:nth-child(7) td:nth-child(7) { background: red; color: white; }
+
+
 </style>
 
 <div class="final-results">
 
-|        Problem |                      Benchmark Quad-Core [*µs*] |||                      Time on Dual-Core [*µs*] |||
-|                |                        Seq | Par-Spec | Par-Spawn |                      Seq | Par-Spec | Par-Spawn |
-| :------------- | -------------------------: | -------: | --------: | -----------------------: | -------: | --------: |
-|        wildcat |                       0.46 |     0.57 |      0.74 |                          |          |           |
-|     diabolical |                      65.51 |    35.32 |     27.46 |                          |          |           |
-| vegard-hanssen |                     139.66 |    96.01 |     58.28 |                          |          |           |
-|      challenge |                      11.45 |     8.47 |      5.70 |                          |          |           |
-|     challenge1 |                     539.64 |   300.15 |    247.80 |                          |          |           |
-|        extreme |                      12.84 |    17.47 |     24.80 |                          |          |           |
-|      seventeen |                      48.12 |    53.08 |    341.39 |                          |          |           |
+|        Problem | Benchmark Quad-Core [*µs*] | | | Time on Dual-Core [*µs*] | | |
+|                |    Seq | Par-Spec | Par-Spawn |    Seq | Par-Spec | Par-Spawn |
+| :------------- | -----: | -------: | --------: | -----: | -------: | --------: |
+| wildcat        |   0.46 |     0.57 |      0.74 |   0.43 |     0.79 |      0.59 |
+| diabolical     |  65.51 |    35.32 |     27.46 |  45.83 |    44.93 |     40.54 |
+| vegard-hanssen | 139.66 |    96.01 |     58.28 |  98.48 |    89.90 |     84.96 |
+| challenge      |  11.45 |     8.47 |      5.70 |   6.66 |     8.28 |      6.09 |
+| challenge1     | 539.64 |   300.15 |    247.80 | 368.31 |   385.52 |    236.58 |
+| extreme        |  12.84 |    17.47 |     24.80 |  12.56 |    21.67 |     26.38 |
+| seventeen      |  48.12 |    53.08 |    341.39 |  44.66 |    41.00 |    491.89 |
 
 </div>
 
