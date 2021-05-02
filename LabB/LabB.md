@@ -134,6 +134,7 @@ c(sudoku). sudoku:benchmarks_par().
 
 
 </style>
+<div style="page-break-after: always; break-after: page;"></div>
 
 <div class="final-results">
 
