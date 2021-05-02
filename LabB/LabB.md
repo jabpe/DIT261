@@ -7,6 +7,7 @@ Predrag Bozhovikj, Erik Sievers
 We ran the benchmarks on two different machines: one with an i7 Dual-Core processor and one with an i7 Quad-Core processor.
 
 For 100 benchmark runs, running the benchmark takes 77.02 seconds on the Dual-Core and 81.77 seconds on the quad core. When we parallelize the solving of the various puzzles, the speedup is fairly small: solving the puzzles in parallel takes 47.50s on the dual core and 55s on the quad core. The reason can be found when looking at how long each puzzle takes to solve:
+
 ```
 
 i7 Dual-Core
@@ -34,11 +35,11 @@ i7 Quad-Core
 
 As we can see, the challenge1 puzzle is by far the slowest to solve: in fact, it takes longer to solve that puzzle than all other puzzles combined. Analysing using percept confirms this: most processes finish quickly, apart from one.
 
-![](Parallel.png)
+<img src="Parallel.png" width="100%"/>
 
 Contrast this with the sequential implementation that does all work on one thread.
 
-![](Sequential.png)
+<img src="Sequential.png" width="100%"/>
 
 We tried three different approaches to parallelising the solver:
 1. Parallelising the refinement of rows using `spawn_link`
@@ -137,7 +138,7 @@ c(sudoku). sudoku:benchmarks_par().
 
 <div class="final-results">
 
-|        Problem | Benchmark Quad-Core [*µs*] | | | Time on Dual-Core [*µs*] | | |
+|        Problem | Benchmark Quad-Core [*µs*]  ||| Time on Dual-Core [*µs*]    |||
 |                |    Seq | Par-Spec | Par-Spawn |    Seq | Par-Spec | Par-Spawn |
 | :------------- | -----: | -------: | --------: | -----: | -------: | --------: |
 | wildcat        |   0.46 |     0.57 |      0.74 |   0.43 |     0.79 |      0.59 |
