@@ -224,39 +224,6 @@ update_nth(I,X,Xs) ->
 
 %% solve a puzzle
 
-
-solve(M) ->
-    Solution = solve_refined(refine(fill(M))),
-    case valid_solution(Solution) of
-	true ->
-	    Solution;
-	false ->
-	    exit({invalid_solution,Solution})
-    end.
-
-solve_refined(M) ->
-    case solved(M) of
-	true ->
-	    M;
-	false ->
-	    solve_one(guesses(M))
-    end.
-
-solve_one([]) ->
-    exit(no_solution);
-solve_one([M]) ->
-    solve_refined(M);
-solve_one([M|Ms]) -> 
-    spawn_solve_one([M|Ms]).
-    % Threshold = 200,
-    % Td = 0,
-    % if
-    %     Td < Threshold ->
-    %         solve_one_seq([M|Ms]);
-    %     true ->
-    %         spawn_solve_one([M|Ms])
-    % end.
-
 solve_par(M) ->
     RootPid = self(),
     MaxDepth = 3,
@@ -291,6 +258,30 @@ solve_one_par([M|Ms], RootPid, Ref, Depth, MaxDepth) ->
 	{'EXIT', no_solution} ->
         solve_one_par(Ms, RootPid, Ref, Depth, MaxDepth)
     end.
+
+solve(M) ->
+    Solution = solve_refined(refine(fill(M))),
+    case valid_solution(Solution) of
+	true ->
+	    Solution;
+	false ->
+	    exit({invalid_solution,Solution})
+    end.
+
+solve_refined(M) ->
+    case solved(M) of
+	true ->
+	    M;
+	false ->
+	    solve_one(guesses(M))
+    end.
+
+solve_one([]) ->
+    exit(no_solution);
+solve_one([M]) ->
+    solve_refined(M);
+solve_one([M|Ms]) -> 
+    spawn_solve_one([M|Ms]).
 
 spawn_solve_one([]) ->
     exit(no_solution);
@@ -334,16 +325,21 @@ bm(F) ->
 repeat(F) ->
     [F() || _ <- lists:seq(1,?EXECUTIONS)].
 
-benchmarks(Puzzles) ->
+benchmarks_par(Puzzles) ->
     [{Name,bm(fun()->solve_par(M) end)} || {Name,M} <- Puzzles].
 
-% benchmarks(Puzzles) ->
-%     [{Name,bm(fun()->solve(M) end)} || {Name,M} <- Puzzles].
-
-benchmarks() ->
+benchmarks_par() ->
 %   par:start(),
   {ok,Puzzles} = file:consult("problems.txt"),
-  timer:tc(?MODULE,benchmarks,[Puzzles]).
+  timer:tc(?MODULE,benchmarks_par,[Puzzles]).
+
+benchmarks_spec(Puzzles) ->
+    [{Name,bm(fun()->solve(M) end)} || {Name,M} <- Puzzles].
+
+benchmarks_spec() ->
+%   par:start(),
+  {ok,Puzzles} = file:consult("problems.txt"),
+  timer:tc(?MODULE,benchmarks_spec,[Puzzles]).
 		      
 %% check solutions for validity
 

@@ -50,19 +50,80 @@ We tried three different approaches to parallelising the solver:
 
 We ran the benchmark with two different computers: one with an i7 Dual-Core processor and one with an i7 Quad-Core processor. Both computers had 16gb of RAM.
 
-|              Task | Dual-Core | Quad-Core |
-| ----------------: | :-------: | :-------: |
-|        Sequential |    77s    |    81s    |
-| Parallel problems |    48s    |    55s    |
-|   Parallel search |    59s    |    41s    |
-|    Parallel guess |   115s    |    92s    |
-|   Parallel refine |   ~31m    |   ~38m    |
+|                               Task | Dual-Core | Quad-Core |
+| ---------------------------------: | :-------: | :-------: |
+|                         Sequential |    77s    |    81s    |
+|                  Parallel problems |    48s    |    55s    |
+| Parallel search w/ `par:speculate` |    59s    |    41s    |
+|    Parallel search w/ `spawn_link` |           |    70s    |
+|                     Parallel guess |   115s    |    92s    |
+|                    Parallel refine |   ~31m    |   ~38m    |
 
-The best parallelisation opportunity we found (and the only that improved the execution time) was the parallel search, which on the dual core processor resulted in a speed-up of 30% and on the quad-core 98%. The other forms of parallelism seem to be too finely granular to be worthwhile and actively worsen the performance.
+The best parallelisation opportunity we found (and the only that improved the execution time) was the parallel search using both `par:speculate` and `spawn_link`, which on the dual core processor resulted in a speed-up of 30% and on the quad-core 98%. The other forms of parallelism seem to be too finely granular to be worthwhile and actively worsen the performance.
 
 The benchmark for the parallel refine is approximate. After the benchmark didn't finish for 10 minutes, it was cancelled. Running one execution instead of 100 took 19s and 23s respectively. Multiplying that by 100, we get a rough estimate of 31 minutes and 38 minutes, respectively.
 
-### Parallel search worker pool vs `spawn_link`
+## Part two: comparing performance for parallel search using `par:speculate` and `spawn_link`
+
+To run parallel search with `par:speculate`, run
+
+```erlang
+c(par). par:start(). c(sudoku). sudoku:benchmarks_spec().
+```
+
+To run parallel search with `spawn_link`, run
+
+```erlang
+c(sudoku). sudoku:benchmarks_par().
+```
+
+
+<style>
+.final-results tr:nth-child(1) td:nth-child(2) { background: green; color: white; }
+.final-results tr:nth-child(1) td:nth-child(3) { background: yellow; color: black; }
+.final-results tr:nth-child(1) td:nth-child(4) { background: red; color: white; }
+
+.final-results tr:nth-child(2) td:nth-child(2) { background: red; color: white; }
+.final-results tr:nth-child(2) td:nth-child(3) { background: yellow; color: black; }
+.final-results tr:nth-child(2) td:nth-child(4) { background: green; color: white; }
+
+.final-results tr:nth-child(3) td:nth-child(2) { background: red; color: white; }
+.final-results tr:nth-child(3) td:nth-child(3) { background: yellow; color: black; }
+.final-results tr:nth-child(3) td:nth-child(4) { background: green; color: white; }
+
+.final-results tr:nth-child(4) td:nth-child(2) { background: red; color: white; }
+.final-results tr:nth-child(4) td:nth-child(3) { background: yellow; color: black; }
+.final-results tr:nth-child(4) td:nth-child(4) { background: green; color: white; }
+
+.final-results tr:nth-child(5) td:nth-child(2) { background: red; color: white; }
+.final-results tr:nth-child(5) td:nth-child(3) { background: yellow; color: black; }
+.final-results tr:nth-child(5) td:nth-child(4) { background: green; color: white; }
+
+.final-results tr:nth-child(6) td:nth-child(2) { background: green; color: white; }
+.final-results tr:nth-child(6) td:nth-child(3) { background: yellow; color: black; }
+.final-results tr:nth-child(6) td:nth-child(4) { background: red; color: white; }
+
+.final-results tr:nth-child(7) td:nth-child(2) { background: green; color: white; }
+.final-results tr:nth-child(7) td:nth-child(3) { background: yellow; color: black; }
+.final-results tr:nth-child(7) td:nth-child(4) { background: red; color: white; }
+</style>
+
+<div class="final-results">
+
+|        Problem |                      Benchmark Quad-Core [*µs*] |||                      Time on Dual-Core [*µs*] |||
+|                |                        Seq | Par-Spec | Par-Spawn |                      Seq | Par-Spec | Par-Spawn |
+| :------------- | -------------------------: | -------: | --------: | -----------------------: | -------: | --------: |
+|        wildcat |                       0.46 |     0.57 |      0.74 |                          |          |           |
+|     diabolical |                      65.51 |    35.32 |     27.46 |                          |          |           |
+| vegard-hanssen |                     139.66 |    96.01 |     58.28 |                          |          |           |
+|      challenge |                      11.45 |     8.47 |      5.70 |                          |          |           |
+|     challenge1 |                     539.64 |   300.15 |    247.80 |                          |          |           |
+|        extreme |                      12.84 |    17.47 |     24.80 |                          |          |           |
+|      seventeen |                      48.12 |    53.08 |    341.39 |                          |          |           |
+
+</div>
+
+<!-- ### Parallel search worker pool vs `spawn_link`
 Worker pool:
 ```
 {51107880,
@@ -87,7 +148,7 @@ Worker pool:
   {seventeen,341.39387}]}
 ```
 
-This brings a nice speedup to all problems, except extreme and seventeen which are slower than on the sequential solver.
+This brings a nice speedup to all problems, except extreme and seventeen which are slower than on the sequential solver. -->
 
 <!-- After implementing worker pools and splitting of the initial decision tree into one process for each, the number of processes jumps drastically without a significant speedup in execution (46.4s), as can be seen in percept. -->
 <!-- ![](ConcurrentInitialTreeSplit.png) -->
