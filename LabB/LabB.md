@@ -63,20 +63,23 @@ The best parallelisation opportunity we found (and the only that improved the ex
 
 The benchmark for the parallel refine is approximate. After the benchmark didn't finish for 10 minutes, it was cancelled. Running one execution instead of 100 took 19s and 23s respectively. Multiplying that by 100, we get a rough estimate of 31 minutes and 38 minutes, respectively.
 
-## Part two: comparing performance for parallel search using `par:speculate` and `spawn_link`
+## Part two: comparing performance for parallel search
 
-To run parallel search with `par:speculate`, run
+### Parallel search with `par:speculate`
+Parallel search with `par:speculate` uses a worker pool to run function `solve_one/1` in a worker parallel to the main thread - when either the main thread or worker find a solution, DFS search is done and the solver waits to recur back to the first solver function call. To run parallel search with `par:speculate`, run
 
 ```erlang
 c(par). par:start(). c(sudoku). sudoku:benchmarks_spec().
 ```
 
-To run parallel search with `spawn_link`, run
+### Parallel search with `spawn_link` splitting the decision tree
+Parallel search with `spawn_link` spawns child processes until a given max. depth is reached and the solution is searched then successfully on each process in parallel. If/when a solution is found, the solution is messaged to the main parent process which then kills all child processes and continues execution to the next problem. To run parallel search with `spawn_link`, run
 
 ```erlang
 c(sudoku). sudoku:benchmarks_par().
 ```
 
+### Benchmarking
 
 <style>
 .final-results tr:nth-child(1) td:nth-child(2) { background: green; color: white; }
