@@ -83,6 +83,17 @@ let main (abs_temp: f32) (samplerate: f32)
 -- ==
 -- entry: main
 -- input { 0.5f32 0.1f32 10i64 10i64 2 } auto output
+-- input { 0.5f32 0.1f32 30i64 30i64 2 } auto output
+-- input { 0.5f32 0.1f32 90i64 90i64 2 } auto output
+-- input { 0.5f32 0.1f32 270i64 270i64 2 } auto output
+-- input { 0.5f32 0.1f32 10i64 10i64 20 } auto output
+-- input { 0.5f32 0.1f32 30i64 30i64 20 } auto output
+-- input { 0.5f32 0.1f32 90i64 90i64 20 } auto output
+-- input { 0.5f32 0.1f32 270i64 270i64 20 } auto output
+-- input { 0.5f32 0.1f32 10i64 10i64 200 } auto output
+-- input { 0.5f32 0.1f32 30i64 30i64 200 } auto output
+-- input { 0.5f32 0.1f32 90i64 90i64 200 } auto output
+-- input { 0.5f32 0.1f32 270i64 270i64 200 } auto output
 
 -- The following definitions are for the visualisation and need not be modified.
 
