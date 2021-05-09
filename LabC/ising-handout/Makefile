@@ -32,3 +32,20 @@ ising-tui.o: ising-tui.c ising.h
 
 ising-tui: ising-tui.o ising.o
 	$(CC) -o $@ $^ $(LDFLAGS)
+
+SIZES = 10 50 250 1250
+
+plot: benchmark
+	python plot.py ising $(SIZES)
+
+benchmark: opencl c
+
+opencl:
+	futhark bench --backend=opencl \
+	              --json ising-opencl.json \
+	              ising.fut
+
+c:
+	futhark bench --backend=c \
+	              --json ising-c.json \
+	              ising.fut
