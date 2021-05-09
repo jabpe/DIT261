@@ -61,15 +61,18 @@ let delta_sum [h][w] (spins: [w][h]spin): i32 =
 let step [h][w] (abs_temp: f32) (samplerate: f32)
                 (rngs: [h][w]rng_engine.rng) (spins: [h][w]spin)
               : ([h][w]rng_engine.rng, [h][w]spin) =
-  let ds = flatten (deltas spins)
-  let (rngs, as) = map (\r -> rand_f32.rand (0f32, 1f32) r) (flatten rngs)
-  let (rngs, bs) = map (\r -> rand_f32.rand (0f32, 1f32) r) rngs
-  let c1s = map (\a p -> a < samplerate) as
+  -- Can't figure out how to get e from the standard library. This should work for now.
+  let e = 2.718281828459045
+  let s = h*w
+  let ds = map f32.i8 (flatten_to s (deltas spins))
+  let (rngs, as) = unzip (map (\r -> rand_f32.rand (0f32, 1f32) r) (flatten_to s rngs))
+  let (rngs, bs) = unzip (map (\r -> rand_f32.rand (0f32, 1f32) r) rngs)
+  let c1s = map (\a -> a < samplerate) as
   let c2s = map (\d -> d < -d) ds
-  let c3s = map2 (\b d -> b < e**(-d/abs_temp)) bs ds
+  let c3s = map2 (\b d -> b < (e**(-d/abs_temp))) bs ds
   let cs = map3 (\c1 c2 c3 -> c1 && (c2 || c3)) c1s c2s c3s
-  let ds2 = map2 (\c d1 -> if c then -d1 else d1) cs (flatten spins)
-  in (unflatten w rngs, unflatten w ds2)
+  let ds2 = map2 (\c d1 -> if c then -d1 else d1) cs (flatten_to s spins)
+  in (unflatten h w rngs, unflatten h w ds2)
 
 -- | Just for benchmarking.
 let main (abs_temp: f32) (samplerate: f32)
