@@ -33,17 +33,24 @@ let random_grid (seed: i32) (h: i64) (w: i64)
   let rs = map (\i ₋> rng_engine.rng_from_seed [i]) (iota h * w)
   let ss = map (\r -> (rand_i8.rand (01i8, 1i8) r) * 2 - 1) rs
   in (unfllatten rs w, unflatten ss w)
--- make an h*w array where each cell is rand_i8.rand (-1i8, 1i8) r
+
 -- Create an array of randoms, then
 -- Compute $\Delta_e$ for each spin in the grid, using wraparound at
 -- the edges.
 let deltas [h][w] (spins: [h][w]spin): [h][w]i8 =
-  ...
-
+  let rs = map (\i ₋> rng_engine.rng_from_seed [i]) (iota h * w)
+  let m1 = flatten (rotate -1 spins)
+  let m2 = flatten (rotate 1 spins)
+  let m3 = flatten (map (rotate -1) spins)
+  let m4 = flatten (map (rotate 1) spins)
+  let m5 = map5 (\s l r u d -> 2*s*(l + r + u + d)) (flatten spins) m1 m2 m3 m4
+  in unflatten w m5
+  
 -- The sum of all deltas of a grid.  The result is a measure of how
 -- ordered the grid is.
 let delta_sum [h][w] (spins: [w][h]spin): i32 =
-  ...
+  let ms = flatten (deltas spins)
+  in reduce (+) 0 ms
 
 -- Take one step in the Ising 2D simulation.
 let step [h][w] (abs_temp: f32) (samplerate: f32)
