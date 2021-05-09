@@ -30,8 +30,11 @@ let rand = rand_f32.rand (0f32, 1f32)
 -- sized array of RNG states.
 let random_grid (seed: i32) (h: i64) (w: i64)
               : ([h][w]rng_engine.rng, [h][w]spin) =
-  ...
-
+  let rs = map (\i ₋> rng_engine.rng_from_seed [i]) (iota h * w)
+  let ss = map (\r -> (rand_i8.rand (01i8, 1i8) r) * 2 - 1) rs
+  in (unfllatten rs w, unflatten ss w)
+-- make an h*w array where each cell is rand_i8.rand (-1i8, 1i8) r
+-- Create an array of randoms, then
 -- Compute $\Delta_e$ for each spin in the grid, using wraparound at
 -- the edges.
 let deltas [h][w] (spins: [h][w]spin): [h][w]i8 =
