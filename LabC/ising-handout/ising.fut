@@ -30,15 +30,20 @@ let rand = rand_f32.rand (0f32, 1f32)
 -- sized array of RNG states.
 let random_grid (seed: i32) (h: i64) (w: i64)
               : ([h][w]rng_engine.rng, [h][w]spin) =
-  let rs = map (\i ₋> rng_engine.rng_from_seed [i]) (iota h * w)
-  let ss = map (\r -> (rand_i8.rand (01i8, 1i8) r) * 2 - 1) rs
-  in (unfllatten rs w, unflatten ss w)
+  let s = w*h
+  let rs1 = rng_engine.split_rng s (rng_engine.rng_from_seed [seed])
+  let ss1 = map (\r -> 
+    let (_, i ) = rand_i8.rand (0i8, 1i8) r
+    in i * 2 + 1) rs1
+  let rs2 = unflatten h w rs1
+  let ss2 = unflatten h w ss1
+  in (rs2, ss2)
 
 -- Create an array of randoms, then
 -- Compute $\Delta_e$ for each spin in the grid, using wraparound at
 -- the edges.
 let deltas [h][w] (spins: [h][w]spin): [h][w]i8 =
-  let rs = map (\i ₋> rng_engine.rng_from_seed [i]) (iota h * w)
+  let rs = map (\i -> rng_engine.rng_from_seed [i]) (iota h * w)
   let m1 = flatten (rotate -1 spins)
   let m2 = flatten (rotate 1 spins)
   let m3 = flatten (map (rotate -1) spins)
