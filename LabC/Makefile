@@ -38,37 +38,39 @@ clean:
 	rm -f two_*_i32s *.json *.pdf *.bin *.c
 
 
+
+SIZES2 = 100 1000 10000 100000 1000000 10000000
 plot_2_2: exercise_2_2.pdf exercise_2_2_2.pdf
 
 sr_%_i32s:
 	futhark dataset -b -g [$*]i32 -g [$*]bool > $@
 
 exercise_2_2.pdf: benchmark_2
-	python plot2.py exercise_2_2 $(SIZES)
+	python plot2.py exercise_2_2 $(SIZES2)
 
 exercise_2_2_2.pdf: benchmark_2
-	python plot2.py exercise_2_2_2 $(SIZES)
+	python plot2.py exercise_2_2_2 $(SIZES2)
 # exercise_2_2_default.pdf: benchmark_2
 # 	python plot2.py exercise_2_2_default $(SIZES)
 
 benchmark_2: exercise_2_2.json exercise_2_2_default.json exercise_2_2_2.json exercise_2_2_2_default.json
 
-exercise_2_2.json: $(SIZES:%=sr_%_i32s) exercise_2_2.fut
+exercise_2_2.json: $(SIZES2:%=sr_%_i32s) exercise_2_2.fut
 	futhark bench --backend=opencl \
 	              --json exercise_2_2.json \
 	              exercise_2_2.fut
 
-exercise_2_2_default.json: $(SIZES:%=sr_%_i32s) exercise_2_2_default.fut
+exercise_2_2_default.json: $(SIZES2:%=sr_%_i32s) exercise_2_2_default.fut
 	futhark bench --backend=opencl \
 	              --json exercise_2_2_default.json \
 	              exercise_2_2_default.fut
 
-exercise_2_2_2.json: $(SIZES:%=sr_%_i32s) exercise_2_2_2.fut
+exercise_2_2_2.json: $(SIZES2:%=sr_%_i32s) exercise_2_2_2.fut
 	futhark bench --backend=opencl \
 	              --json exercise_2_2_2.json \
 	              exercise_2_2_2.fut
 
-exercise_2_2_2_default.json: $(SIZES:%=sr_%_i32s) exercise_2_2_2_default.fut
+exercise_2_2_2_default.json: $(SIZES2:%=sr_%_i32s) exercise_2_2_2_default.fut
 	futhark bench --backend=opencl \
 	              --json exercise_2_2_2_default.json \
 	              exercise_2_2_2_default.fut

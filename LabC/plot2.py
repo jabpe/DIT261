@@ -29,15 +29,22 @@ c_runtimes = [ np.mean(c_measurements['sr_{}_i32s'.format(n)]['runtimes']) / 100
 speedups = list(map(lambda x, y: x / y, c_runtimes, opencl_runtimes))
 
 fig, ax1 = plt.subplots()
-opencl_runtime_plot = ax1.plot(data_sizes, opencl_runtimes, 'b-', label='Scan runtime')
-c_runtime_plot = ax1.plot(data_sizes, c_runtimes, 'g-', label='Segscan runtime')
+if benchmark == 'exercise_2_2':
+    opencl_runtime_plot = ax1.plot(data_sizes, opencl_runtimes, 'b-', label='Scan runtime')
+    c_runtime_plot = ax1.plot(data_sizes, c_runtimes, 'g-', label='Segscan runtime')
+else:
+    opencl_runtime_plot = ax1.plot(data_sizes, opencl_runtimes, 'b-', label='Reduce runtime')
+    c_runtime_plot = ax1.plot(data_sizes, c_runtimes, 'g-', label='Segreduce runtime')
 ax1.set_xlabel('Input size')
 ax1.set_ylabel('Runtime (ms)', color='k')
 ax1.tick_params('y', colors='k')
 plt.xticks(data_sizes, rotation='vertical')
 ax1.semilogx()
 ax2 = ax1.twinx()
-speedup_plot = ax2.plot(data_sizes, speedups, 'k-', label='Scan speedup')
+if benchmark == 'exercise_2_2':
+    speedup_plot = ax2.plot(data_sizes, speedups, 'k-', label='Scan speedup')
+else:
+    speedup_plot = ax2.plot(data_sizes, speedups, 'k-', label='Reduce speedup')
 ax2.set_ylabel('Speedup', color='k')
 ax2.tick_params('y', colors='k')
 
