@@ -61,7 +61,6 @@ let delta_sum [h][w] (spins: [w][h]spin): i32 =
 let step [h][w] (abs_temp: f32) (samplerate: f32)
                 (rngs: [h][w]rng_engine.rng) (spins: [h][w]spin)
               : ([h][w]rng_engine.rng, [h][w]spin) =
-  -- Can't figure out how to get e from the standard library. This should work for now.
   let e = 2.718281828459045
   let s = h*w
   let ds = map f32.i8 (flatten_to s (deltas spins))

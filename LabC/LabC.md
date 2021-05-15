@@ -27,7 +27,11 @@ $$ (1), \, (2) \; \therefore \;\; (0, \, false) \oplus^\prime (v_2, \, false) = 
 $$ (3), \, (4) \; \therefore \;\; (0, \, false) \oplus^\prime (v_2, \, f_2) = (v_2, \, f_2) \;\;\; \blacksquare$$ (5)
 
 ### Exercise 2.2
-Compare benchmarks of segreduce and segscan with the native implementations
+<img src="exercise_2_2.png" width="50%" />
+The standard scan performs better than the segmented scan, but the speedup seems to vary. Looking at the chart, it's unclear if they scale evenly or not. However, since the segmented scan only performs a small amount of extra work for each element it'd be expected that the speedup is consistent across problem sizes.
+
+<img src="exercise_2_2_2.png" width="50%" />
+The standard reduce performs better than the segmented reduce, and the speedup increases with input size. Comparing the previous chart with this one, we can see that scan actually is quite a bit slower than reduce, which makes sense since reduce only needs to produce the output of the last element produced by scan. In our implementation however, we're using scan, which already is going to bring the performance closer to scan than reduce. Furthermore, we perform a couple of unzip and zip operations, a rotate and a filter operation which also adds to the execution time.
 
 ## Exercise 3: 2D Ising Model
 
@@ -64,4 +68,4 @@ The third chart is for 200 iterations. The pattern is yet again similar to the o
 
 ![](ising-handout/ising-combined.pdf)
 
-The final chard is showing the runtime across all number of iterations for all sizes. Interestingly, across all number of iterations the 10x10 model took longer to compute compared to both the 30x30 and 90x90 model when using OpenCL. OpenCL scales significantly better with regards to problem size for all number of iterations, but it also scales _slightly_ better with regards to the number of iterations compared to the sequential implementation.
+The final chart is showing the runtime across all number of iterations for all sizes. Interestingly, across all number of iterations the 10x10 model took longer to compute compared to both the 30x30 and 90x90 model when using OpenCL. OpenCL scales significantly better with regards to problem size for all number of iterations, but it also scales _slightly_ better with regards to the number of iterations compared to the sequential implementation.

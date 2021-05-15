@@ -15,13 +15,23 @@ let gather 'a (is: []i64) (xs: []a) =
   map (\i -> xs[i]) is
 
 let segreduce [n] 't (op: t -> t -> t) (ne: t) (arr: [n] (t, bool)): []t =
-    let (_, bs) = unzip arr
-    let (vs, _) = unzip (scan (st op ne) (ne, false) arr)
-    let (is, _) = unzip (filter (\(i, b) -> b && i >= 0) (zip (iota1 n) bs))
-    in gather (is ++ [n-1]) vs
+    let (vs, bs) = unzip (scan (st op ne) (ne, false) arr)
+    let bs = (rotate (1) (bs with [0] = true))
+    let (is, _) = unzip (filter (\(_, b) -> b) (zip vs bs))
+    in is
 
 -- How do we do this with scatter?
 -- We write the stuff that is preceeded by true to an array?
 
+-- ==
+-- input @ sr_100_i32s
+-- input @ sr_1000_i32s
+-- input @ sr_10000_i32s
+-- input @ sr_100000_i32s
+-- input @ sr_1000000_i32s
+-- input @ sr_10000000_i32s
+
 let main (xs: []i32) (ys: []bool) =
   segreduce (+) 0 (zip xs ys)
+
+-- [3i32, 7i32, 11i32, 15i32, 9i32, 10i32]

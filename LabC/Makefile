@@ -5,8 +5,8 @@ all: plot
 plot: exercise_1_1.pdf exercise_1_3.pdf
 
 two_%_i32s:
-	futhark dataset -b --i32-bounds=-10000:10000 \
-	                -g [$*]i32 -g [$*]i32 > $@
+	futhark dataset -b --i32-bounds=-10000:10000 
+	                -g [$*]i32 -g [$*]bool > $@
 
 exercise_1_1.pdf: benchmark
 	python plot.py exercise_1_1 $(SIZES)
@@ -42,3 +42,41 @@ exercise_2_3-opencl.json: $(SIZES:%=two_%_i32s) exercise_2_3.fut
 
 clean:
 	rm -f two_*_i32s *.json *.pdf *.bin *.c
+
+
+
+SIZES2 = 100 1000 10000 100000 1000000 10000000
+plot_2_2: exercise_2_2.pdf exercise_2_2_2.pdf
+
+sr_%_i32s:
+	futhark dataset -b -g [$*]i32 -g [$*]bool > $@
+
+exercise_2_2.pdf: benchmark_2
+	python plot2.py exercise_2_2 $(SIZES2)
+
+exercise_2_2_2.pdf: benchmark_2
+	python plot2.py exercise_2_2_2 $(SIZES2)
+# exercise_2_2_default.pdf: benchmark_2
+# 	python plot2.py exercise_2_2_default $(SIZES)
+
+benchmark_2: exercise_2_2.json exercise_2_2_default.json exercise_2_2_2.json exercise_2_2_2_default.json
+
+exercise_2_2.json: $(SIZES2:%=sr_%_i32s) exercise_2_2.fut
+	futhark bench --backend=opencl \
+	              --json exercise_2_2.json \
+	              exercise_2_2.fut
+
+exercise_2_2_default.json: $(SIZES2:%=sr_%_i32s) exercise_2_2_default.fut
+	futhark bench --backend=opencl \
+	              --json exercise_2_2_default.json \
+	              exercise_2_2_default.fut
+
+exercise_2_2_2.json: $(SIZES2:%=sr_%_i32s) exercise_2_2_2.fut
+	futhark bench --backend=opencl \
+	              --json exercise_2_2_2.json \
+	              exercise_2_2_2.fut
+
+exercise_2_2_2_default.json: $(SIZES2:%=sr_%_i32s) exercise_2_2_2_default.fut
+	futhark bench --backend=opencl \
+	              --json exercise_2_2_2_default.json \
+	              exercise_2_2_2_default.fut
