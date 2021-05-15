@@ -31,7 +31,7 @@ $$ (3), \, (4) \; \therefore \;\; (0, \, false) \oplus^\prime (v_2, \, f_2) = (v
 The standard scan performs better than the segmented scan, but the speedup seems to vary. Looking at the chart, it's unclear if they scale evenly or not. However, since the segmented scan only performs a small amount of extra work for each element it'd be expected that the speedup is consistent across problem sizes.
 
 <img src="exercise_2_2_2.png" width="50%" />
-The standard reduce performs better than the segmented reduce, and the speedup increases with input size.
+The standard reduce performs better than the segmented reduce, and the speedup increases with input size. Comparing the previous chart with this one, we can see that scan actually is quite a bit slower than reduce, which makes sense since reduce only needs to produce the output of the last element produced by scan. In our implementation however, we're using segscan, which already is going to bring the performance closer to scan than reduce. Furthermore, we perform a couple of unzip and zip operations, a filter operation and a gather operation which also adds to the execution time.
 
 ## Exercise 3: 2D Ising Model
 
