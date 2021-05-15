@@ -32,9 +32,12 @@ fig, ax1 = plt.subplots()
 if benchmark == 'exercise_2_2':
     opencl_runtime_plot = ax1.plot(data_sizes, opencl_runtimes, 'b-', label='Scan runtime')
     c_runtime_plot = ax1.plot(data_sizes, c_runtimes, 'g-', label='Segscan runtime')
-else:
+elif benchmark == 'exercise_2_2_2':
     opencl_runtime_plot = ax1.plot(data_sizes, opencl_runtimes, 'b-', label='Reduce runtime')
     c_runtime_plot = ax1.plot(data_sizes, c_runtimes, 'g-', label='Segreduce runtime')
+else:
+    opencl_runtime_plot = ax1.plot(data_sizes, opencl_runtimes, 'b-', label='Default reduce_by_index runtime')
+    c_runtime_plot = ax1.plot(data_sizes, c_runtimes, 'g-', label='Our reduce_by_index runtime')
 ax1.set_xlabel('Input size')
 ax1.set_ylabel('Runtime (ms)', color='k')
 ax1.tick_params('y', colors='k')
@@ -43,8 +46,10 @@ ax1.semilogx()
 ax2 = ax1.twinx()
 if benchmark == 'exercise_2_2':
     speedup_plot = ax2.plot(data_sizes, speedups, 'k-', label='Scan speedup')
-else:
+elif benchmark == 'exercise_2_2_2':
     speedup_plot = ax2.plot(data_sizes, speedups, 'k-', label='Reduce speedup')
+else:
+    speedup_plot = ax2.plot(data_sizes, speedups, 'k-', label='reduce_by_index speedup')
 ax2.set_ylabel('Speedup', color='k')
 ax2.tick_params('y', colors='k')
 
