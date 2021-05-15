@@ -1,0 +1,132 @@
+{
+    "exercise_2_2_default.fut": {
+        "datasets": {
+            "sr_5000000_i32s": {
+                "bytes": {
+                    "device": 45000000
+                },
+                "runtimes": [
+                    11281,
+                    11353,
+                    11897,
+                    16988,
+                    10251,
+                    13703,
+                    10553,
+                    9979,
+                    9601,
+                    15161
+                ],
+                "stderr": "runtime: 11281\n\nruntime: 11353\n\nruntime: 11897\n\nruntime: 16988\n\nruntime: 10251\n\nruntime: 13703\n\nruntime: 10553\n\nruntime: 9979\n\nruntime: 9601\n\nruntime: 15161\n\nPeak memory usage for space 'device': 45000000 bytes.\n\n"
+            },
+            "sr_10000000_i32s": {
+                "bytes": {
+                    "device": 90000000
+                },
+                "runtimes": [
+                    21922,
+                    25458,
+                    22973,
+                    22977,
+                    21395,
+                    20383,
+                    16685,
+                    19464,
+                    19074,
+                    18424
+                ],
+                "stderr": "runtime: 21922\n\nruntime: 25458\n\nruntime: 22973\n\nruntime: 22977\n\nruntime: 21395\n\nruntime: 20383\n\nruntime: 16685\n\nruntime: 19464\n\nruntime: 19074\n\nruntime: 18424\n\nPeak memory usage for space 'device': 90000000 bytes.\n\n"
+            },
+            "sr_100000_i32s": {
+                "bytes": {
+                    "device": 900000
+                },
+                "runtimes": [
+                    1602,
+                    1435,
+                    1798,
+                    1007,
+                    987,
+                    992,
+                    1009,
+                    1009,
+                    1321,
+                    1417
+                ],
+                "stderr": "runtime: 1602\n\nruntime: 1435\n\nruntime: 1798\n\nruntime: 1007\n\nruntime: 987\n\nruntime: 992\n\nruntime: 1009\n\nruntime: 1009\n\nruntime: 1321\n\nruntime: 1417\n\nPeak memory usage for space 'device': 900000 bytes.\n\n"
+            },
+            "sr_1000_i32s": {
+                "bytes": {
+                    "device": 9000
+                },
+                "runtimes": [
+                    608,
+                    838,
+                    644,
+                    2680,
+                    2374,
+                    1192,
+                    1518,
+                    802,
+                    647,
+                    771
+                ],
+                "stderr": "runtime: 608\n\nruntime: 838\n\nruntime: 644\n\nruntime: 2680\n\nruntime: 2374\n\nruntime: 1192\n\nruntime: 1518\n\nruntime: 802\n\nruntime: 647\n\nruntime: 771\n\nPeak memory usage for space 'device': 9000 bytes.\n\n"
+            },
+            "sr_1000000_i32s": {
+                "bytes": {
+                    "device": 9000000
+                },
+                "runtimes": [
+                    2631,
+                    2845,
+                    2732,
+                    2816,
+                    2854,
+                    3076,
+                    3609,
+                    3451,
+                    2687,
+                    5952
+                ],
+                "stderr": "runtime: 2631\n\nruntime: 2845\n\nruntime: 2732\n\nruntime: 2816\n\nruntime: 2854\n\nruntime: 3076\n\nruntime: 3609\n\nruntime: 3451\n\nruntime: 2687\n\nruntime: 5952\n\nPeak memory usage for space 'device': 9000000 bytes.\n\n"
+            },
+            "sr_10000_i32s": {
+                "bytes": {
+                    "device": 90000
+                },
+                "runtimes": [
+                    566,
+                    764,
+                    838,
+                    1086,
+                    705,
+                    641,
+                    898,
+                    659,
+                    842,
+                    926
+                ],
+                "stderr": "runtime: 566\n\nruntime: 764\n\nruntime: 838\n\nruntime: 1086\n\nruntime: 705\n\nruntime: 641\n\nruntime: 898\n\nruntime: 659\n\nruntime: 842\n\nruntime: 926\n\nPeak memory usage for space 'device': 90000 bytes.\n\n"
+            },
+            "sr_100_i32s": {
+                "bytes": {
+                    "device": 900
+                },
+                "runtimes": [
+                    373,
+                    697,
+                    1128,
+                    657,
+                    2417,
+                    1647,
+                    2496,
+                    748,
+                    989,
+                    1375
+                ],
+                "stderr": "runtime: 373\n\nruntime: 697\n\nruntime: 1128\n\nruntime: 657\n\nruntime: 2417\n\nruntime: 1647\n\nruntime: 2496\n\nruntime: 748\n\nruntime: 989\n\nruntime: 1375\n\nPeak memory usage for space 'device': 900 bytes.\n\n"
+            }
+        }
+    }
+}
