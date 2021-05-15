@@ -14,7 +14,7 @@ exercise_1_1.pdf: benchmark
 exercise_1_3.pdf: benchmark
 	python plot.py exercise_1_3 $(SIZES)
 
-benchmark: exercise_1_1-opencl.json exercise_1_1-c.json exercise_1_3-opencl.json exercise_1_3-c.json
+benchmark: exercise_1_1-opencl.json exercise_1_1-c.json exercise_1_3-opencl.json exercise_1_3-c.json exercise_2_3-c.json exercise_2_3-opencl.json
 
 SIZES = 100 1000 10000 100000 1000000 5000000 10000000
 
@@ -33,6 +33,12 @@ exercise_1_3-opencl.json: $(SIZES:%=two_%_i32s) exercise_1_3.fut
 
 exercise_1_3-c.json: $(SIZES:%=two_%_i32s) exercise_1_3.fut
 	futhark bench --backend=c exercise_1_3.fut --json exercise_1_3-c.json
+
+exercise_2_3-c.json: $(SIZES:%=two_%_i32s) exercise_2_3.fut
+	futhark bench --backend=c exercise_2_3.fut --json exercise_2_3-c.json
+
+exercise_2_3-opencl.json: $(SIZES:%=two_%_i32s) exercise_2_3.fut
+	futhark bench --backend=c exercise_2_3.fut --json exercise_2_3-opencl.json
 
 clean:
 	rm -f two_*_i32s *.json *.pdf *.bin *.c
