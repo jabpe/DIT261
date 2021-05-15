@@ -20,14 +20,11 @@ A speedup is achieved over the sequential runtime given $\text{input size} \ge 3
 
 ### Exercise 2.1
 
-(1)     ⊕ is an associative operator with neutral element 0
-(2)     (v1, f1) ⊕’ (v2, f2) = (if f2 then v2 else v1 ⊕ v2, f1 ∨ f2)
-    Using (2)
-(3)     (0, false) ⊕’ (v2, true) = (v2, f1 ∨ true) = (v2, true)
-    Using (1), (2)
-(4)     (0, false) ⊕’ (v2, false) = (0 ⊕ v2, false ∨ false) =  (v2, false)
-    Using (3), (4)
-(5)     (0, false) ⊕’ (v2, f2) = (v2, f2)
+$$\oplus \text{ is an associative operator with neutral element } 0$$ (1)
+$$ (v_1, \, f_1) \oplus^\prime (v_2, \, f_2) = (\text{if } f_2 \text{ then } v_2 \text{ else } v_1 \oplus v_2, \,f_1 \vee f_2)$$ (2)
+$$(2) \; \therefore \;\; (0, \, false) \oplus^\prime (v_2, \, true) = (v_2, \, f_1 \vee true) = (v_2, \, true)$$ (3)
+$$ (1), \, (2) \; \therefore \;\; (0, \, false) \oplus^\prime (v_2, \, false) = (0 \oplus v_2, \, false \vee false) = (v_2, \, false)$$ (4)
+$$ (3), \, (4) \; \therefore \;\; (0, \, false) \oplus^\prime (v_2, \, f_2) = (v_2, \, f_2) \;\;\; \blacksquare$$ (5)
 
 ### Exercise 2.2
 Compare benchmarks of segreduce and segscan with the native implementations
