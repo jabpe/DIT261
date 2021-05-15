@@ -18,6 +18,20 @@ A speedup is achieved over the sequential runtime given $\text{input size} \ge 3
 
 <img src="exercise_1_3.png" width="50%" />
 
+### Exercise 2.1
+
+(1)     ⊕ is an associative operator with neutral element 0
+(2)     (v1, f1) ⊕’ (v2, f2) = (if f2 then v2 else v1 ⊕ v2, f1 ∨ f2)
+    Using (2)
+(3)     (0, false) ⊕’ (v2, true) = (v2, f1 ∨ true) = (v2, true)
+    Using (1), (2)
+(4)     (0, false) ⊕’ (v2, false) = (0 ⊕ v2, false ∨ false) =  (v2, false)
+    Using (3), (4)
+(5)     (0, false) ⊕’ (v2, f2) = (v2, f2)
+
+### Exercise 2.2
+Compare benchmarks of segreduce and segscan with the native implementations
+
 ## Exercise 3: 2D Ising Model
 
 We ran the ising model benchmarks with four different sizes and three different number of iterations:
