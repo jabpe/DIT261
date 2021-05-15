@@ -23,5 +23,14 @@ let segreduce [n] 't (op: t -> t -> t) (ne: t) (arr: [n] (t, bool)): []t =
 -- How do we do this with scatter?
 -- We write the stuff that is preceeded by true to an array?
 
+-- ==
+-- input @ sr_100_i32s
+-- input @ sr_1000_i32s
+-- input @ sr_10000_i32s
+-- input @ sr_100000_i32s
+-- input @ sr_1000000_i32s
+-- input @ sr_5000000_i32s
+-- input @ sr_10000000_i32s
+
 let main (xs: []i32) (ys: []bool) =
   segreduce (+) 0 (zip xs ys)
