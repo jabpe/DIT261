@@ -33,6 +33,11 @@ The standard scan performs better than the segmented scan, but the speedup seems
 <img src="exercise_2_2_2.png" width="50%" />
 The standard reduce performs better than the segmented reduce, and the speedup increases with input size. Comparing the previous chart with this one, we can see that scan actually is quite a bit slower than reduce, which makes sense since reduce only needs to produce the output of the last element produced by scan. In our implementation however, we're using scan, which already is going to bring the performance closer to scan than reduce. Furthermore, we perform a couple of unzip and zip operations, a rotate and a filter operation which also adds to the execution time.
 
+### Exercise 2.3
+
+<img src="exercise_2_3.png" width="50%" />
+Our reduce_by_index is significantly worse than the built-in version. The built-in version's complexity for work is O(n ✕ W(op)) and for span it is O(n ✕ W(op)) according to the documentation.
+
 ## Exercise 3: 2D Ising Model
 
 We ran the ising model benchmarks with four different sizes and three different number of iterations:
