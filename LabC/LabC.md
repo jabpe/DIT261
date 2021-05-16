@@ -28,15 +28,35 @@ $$ (3), \, (4) \; \therefore \;\; (0, \, false) \oplus^\prime (v_2, \, f_2) = (v
 
 ### Exercise 2.2
 <img src="exercise_2_2.png" width="50%" />
+
 The standard scan performs better than the segmented scan, but the speedup seems to vary. Looking at the chart, it's unclear if they scale evenly or not. However, since the segmented scan only performs a small amount of extra work for each element it'd be expected that the speedup is consistent across problem sizes.
 
 <img src="exercise_2_2_2.png" width="50%" />
+
 The standard reduce performs better than the segmented reduce, and the speedup increases with input size. Comparing the previous chart with this one, we can see that scan actually is quite a bit slower than reduce, which makes sense since reduce only needs to produce the output of the last element produced by scan. In our implementation however, we're using scan, which already is going to bring the performance closer to scan than reduce. Furthermore, we perform a couple of unzip and zip operations, a rotate and a filter operation which also adds to the execution time.
 
 ### Exercise 2.3
 
+When determining the asymptotic complexity in terms of work and span of the `reduce_by_index` implementation, we need to consider the complexity of its components, namely:
+
+|            Function |                    Work                     |                       Span                        |
+| ------------------: | :-----------------------------------------: | :-----------------------------------------------: |
+|           `(un)zip` |                "very cheap"                 |                   "very cheap"                    |
+|    `filter fst/snd` |              $\mathcal{O}(n)$               |              $\mathcal{O}(\log(n))$               |
+|              `scan` | $\mathcal{O}(n \times W(\text{operation}))$ | $\mathcal{O}(\log(n) \times W(\text{operation}))$ |
+|            `rotate` |              $\mathcal{O}(1)$               |                 $\mathcal{O}(1)$                  |
+|            `length` |              $\mathcal{O}(1)$               |                 $\mathcal{O}(1)$                  |
+|           `scatter` |              $\mathcal{O}(n)$               |                 $\mathcal{O}(1)$                  |
+|              `mapN` | $\mathcal{O}(n \times W(\text{function}))$  |         $\mathcal{O}(S(\text{function}))$         |
+| `radix_sort_by_key` |          $\mathcal{O}(k \times n)$          |          $\mathcal{O}(k \times \log(n))$          |
+
+Source: [futhark prelude github soacs](https://github.com/diku-dk/futhark/blob/master/prelude/soacs.fut), [array](https://github.com/diku-dk/futhark/blob/master/prelude/array.fut), [zip](https://github.com/diku-dk/futhark/blob/master/prelude/zip.fut).
+
+Given these complexities, we argue that the complexity of the implementation of `segreduce` is work complexity $\mathcal{O}(n \times W(\text{op}))$ and span complexity $\mathcal{O}(\log(n) \times W(\text{op}))$. From this we argue that the work complexity of the implemented `reduce_by_index` is $\mathcal{O}(k \times n \times W(\text{op}))$ and span complexity $\mathcal{O}(\max(\log(n) \times W(\text{op}), \, S(\text{op}))) = \mathcal{O}(k \times \log(n) \times W(\text{op}) + S(\text{op}))$, where $k$ is the number of bits in each element in the array sorted by `radix_sort_by_key`.
+
 <img src="exercise_2_3.png" width="50%" />
-Our reduce_by_index is significantly worse than the built-in version. The built-in version's complexity for work is O(n ✕ W(op)) and for span it is O(n ✕ W(op)) according to the documentation.
+
+Our reduce_by_index is significantly worse than the built-in version. The built-in version's complexity for work is $O(n \times W(op))$ and for span it is $O(n \times W(op))$ according to the documentation.
 
 ## Exercise 3: 2D Ising Model
 
