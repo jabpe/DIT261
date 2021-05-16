@@ -52,7 +52,7 @@ When determining the asymptotic complexity in terms of work and span of the `red
 
 Source: [futhark prelude github soacs](https://github.com/diku-dk/futhark/blob/master/prelude/soacs.fut), [array](https://github.com/diku-dk/futhark/blob/master/prelude/array.fut), [zip](https://github.com/diku-dk/futhark/blob/master/prelude/zip.fut).
 
-Given these complexities, we argue that the complexity of the implementation of `segreduce` is work complexity $\mathcal{O}(n \times W(\text{op}))$ and span complexity $\mathcal{O}(\log(n) \times W(\text{op}))$. From this we argue that the work complexity of the implemented `reduce_by_index` is $\mathcal{O}(k \times n \times W(\text{op}))$ and span complexity $\mathcal{O}(\max(\log(n) \times W(\text{op}), \, S(\text{op}))) = \mathcal{O}(k \times \log(n) \times W(\text{op}) + S(\text{op}))$, where $k$ is the number of bits in each element in the array sorted by `radix_sort_by_key`.
+Given these complexities, we argue that the complexity of the implementation of `segreduce` is work complexity $\mathcal{O}(n \times W(\text{op}))$ and span complexity $\mathcal{O}(\log(n) \times W(\text{op}))$. From this we argue that the work complexity of the implemented `reduce_by_index` is $\mathcal{O}(k \times n \times W(\text{op}))$ and span complexity $\mathcal{O}(\max(k \times \log(n) \times W(\text{op}), \, S(\text{op}))) = \mathcal{O}(k \times \log(n) \times W(\text{op}) + S(\text{op}))$, where $k$ is the number of bits in each element in the array sorted by `radix_sort_by_key`.
 
 <img src="exercise_2_3.png" width="50%" />
 
