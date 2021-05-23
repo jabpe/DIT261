@@ -33,20 +33,21 @@ group(K,Vs,Rest) ->
 
 map_reduce_dist(Map,M,Reduce,R,Input) ->
     ping_nodes(),
-    % c:nl(map_reduce_dist),
     Splits = split_into(M,Input),
-    Mappeds = 
+    Files = 
+        [rpc:async_call(Node, dets, open_file, [web,[{file,"web.dat"}]])
+        || Node <- get_nodes()],
+    yields_async(Files),
+    Mappers = 
         [map_async(Node,Map,R,Split)
-        || {Split, Node} <- Splits],
+        || {Split, Node} <- rotate_zip(Splits, get_nodes())],
+    Mappeds = yields_async(Mappers),
     io:format("Map phase complete\n"),
-    Len = length(Mappeds),
-    io:format("MAPPEDS LEN: ~p\n", [Len]),
-    io:format("MAPPEDS: ~p\n", [Mappeds]),
-    Reduceds =
+    Reducers =
         [reduce_async(Node,Reduce,I,Mappeds) 
         || {I, Node} <- rotate_zip(lists:seq(0,R-1), get_nodes())],
+    Reduceds = yields_async(Reducers),
     io:format("Reduce phase complete\n"),
-    io:format("REDUCEDS: ~p\n", [Reduceds]),
     lists:sort(lists:flatten(Reduceds)).
 
 get_nodes() -> [ 'n1@MacBook-Pro.local'].
@@ -65,27 +66,23 @@ ping_nodes([N|Ns]) ->
 ping_nodes() -> ping_nodes(get_nodes()).
 
 map_async(Node,Map,R,Split) ->
-    Key = rpc:async_call(Node, map_reduce_dist, mapper_dist, [Map,R,Split]),
-    case catch rpc:yield(Key) of
-        {badrpc, Reason} -> [];
-        Result -> Result    
-    end.
+    rpc:async_call(Node, map_reduce_dist, mapper_dist, [Map,R,Split]).
 
 mapper_dist(Map,R,Split) ->
     Mapped = [{erlang:phash2(K2,R),{K2,V2}}
 				  || {K,V} <- Split,
-				     {K2,V2} <- catch Map(K,V)],
-                        io:format(user, ".", []),
+				    {K2,V2} <- Map(K,V)],
+                    io:format(user, ".", []),
     group(lists:sort(Mapped)).
 
 split_into(N,L) ->
-    split_into(N,L,get_nodes(),length(L)).
+    split_into(N,L,length(L)).
 
-split_into(1,L,[N|_],_) ->
-    [{L, N}];
-split_into(N,L,[Node|Nodes],Len) ->
+split_into(1,L,_) ->
+    [L];
+split_into(N,L,Len) ->
     {Pre,Suf} = lists:split(Len div N,L),
-    [{Pre, Node}|split_into(N-1,Suf, Nodes ++ [Node] ,Len-(Len div N))].
+    [Pre|split_into(N-1,Suf,Len-(Len div N))].
 
 rotate_zip([F], [S|_]) ->
     [{F, S}];
@@ -93,18 +90,14 @@ rotate_zip([F|Fs], [S|Ss]) ->
     [{F, S}] ++ rotate_zip(Fs, Ss ++ [S]).
 
 reduce_async(Node,Reduce,I,Mappeds) ->
-    Key = rpc:async_call(Node, map_reduce_dist, reducer_dist, [Reduce,I,Mappeds]),
-    case catch rpc:yield(Key) of
-        {badrpc, Reason} -> [];
-        Result -> Result    
-    end.
-
-reducer_dist(Reduce,I,Mappeds) ->
     Inputs = [KV
 	      || Mapped <- Mappeds,
 		 {J,KVs} <- Mapped,
 		 I==J,
 		 KV <- KVs],
+    rpc:async_call(Node, map_reduce_dist, reducer_dist, [Reduce,Inputs]).
+
+reducer_dist(Reduce,Inputs) ->
     Result = reduce_seq(Reduce,Inputs),
     io:format(user,".",[]),
     Result.
