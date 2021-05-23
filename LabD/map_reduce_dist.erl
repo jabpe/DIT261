@@ -35,16 +35,16 @@ map_reduce_dist(Map,M,Reduce,R,Input) ->
     ping_nodes(),
     % c:nl(map_reduce_dist),
     Splits = split_into(M,Input),
-    Mappers = 
+    Mappeds = 
         [map_async(Node,Map,R,Split)
-        || {Node, Split} <- Splits],
-    Mappeds = yields_async(Mappers),
+        || {Split, Node} <- Splits],
     io:format("Map phase complete\n"),
+    Len = length(Mappeds),
+    io:format("MAPPEDS LEN: ~p\n", [Len]),
     io:format("MAPPEDS: ~p\n", [Mappeds]),
-    Reducers =
+    Reduceds =
         [reduce_async(Node,Reduce,I,Mappeds) 
         || {I, Node} <- rotate_zip(lists:seq(0,R-1), get_nodes())],
-    Reduceds = yields_async(Reducers),
     io:format("Reduce phase complete\n"),
     io:format("REDUCEDS: ~p\n", [Reduceds]),
     lists:sort(lists:flatten(Reduceds)).
@@ -67,30 +67,40 @@ ping_nodes([N|Ns]) ->
     end.
 ping_nodes() -> ping_nodes(get_nodes()).
 
-map_async(Node,Map,R,Split) -> rpc:async_call(Node, map_reduce_dist, mapper_dist, [Map,R,Split]).
+map_async(Node,Map,R,Split) ->
+    Key = rpc:async_call(Node, map_reduce_dist, mapper_dist, [Map,R,Split]),
+    case catch rpc:yield(Key) of
+        {badrpc, Reason} -> [];
+        Result -> Result    
+    end.
 
 mapper_dist(Map,R,Split) ->
     Mapped = [{erlang:phash2(K2,R),{K2,V2}}
 				  || {K,V} <- Split,
-				     {K2,V2} <- Map(K,V)],
-                        io:format("."),
+				     {K2,V2} <- catch Map(K,V)],
+                        io:format(user, ".", []),
     group(lists:sort(Mapped)).
 
 split_into(N,L) ->
     split_into(N,L,get_nodes(),length(L)).
 
 split_into(1,L,[N|_],_) ->
-    [{N, L}];
+    [{L, N}];
 split_into(N,L,[Node|Nodes],Len) ->
     {Pre,Suf} = lists:split(Len div N,L),
-    [{Node, Pre}|split_into(N-1,Suf, Nodes ++ [Node] ,Len-(Len div N))].
+    [{Pre, Node}|split_into(N-1,Suf, Nodes ++ [Node] ,Len-(Len div N))].
 
 rotate_zip([F], [S|_]) ->
     [{F, S}];
 rotate_zip([F|Fs], [S|Ss]) ->
     [{F, S}] ++ rotate_zip(Fs, Ss ++ [S]).
 
-reduce_async(Node,Reduce,I,Mappeds) -> rpc:async_call(Node, map_reduce_dist, reducer_dist, [Reduce,I,Mappeds]).
+reduce_async(Node,Reduce,I,Mappeds) ->
+    Key = rpc:async_call(Node, map_reduce_dist, reducer_dist, [Reduce,I,Mappeds]),
+    case catch rpc:yield(Key) of
+        {badrpc, Reason} -> [];
+        Result -> Result    
+    end.
 
 reducer_dist(Reduce,I,Mappeds) ->
     Inputs = [KV
@@ -105,11 +115,11 @@ reducer_dist(Reduce,I,Mappeds) ->
 yields_async([]) -> [];
 yields_async([K]) ->
     case catch rpc:yield(K) of
-        {badrpc, _} -> [];
+        {badrpc, R} -> [{badrpc, R}];
         Res -> [Res]
     end;
 yields_async([K|Ks]) ->
     case catch rpc:yield(K) of
-        {badrpc, _} -> yields_async(Ks);
+        {badrpc, R} -> [{badrpc, R}] ++ yields_async(Ks);
         Res -> [Res] ++ yields_async(Ks)
     end.

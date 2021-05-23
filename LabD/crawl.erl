@@ -18,7 +18,7 @@ follow(0,KVs) ->
     KVs;
 follow(D,KVs) ->
     follow(D-1,
-	   map_reduce_dist:map_reduce_dist(fun map/2, 100, fun reduce/2, 1, KVs)).
+	   map_reduce:map_reduce_par(fun map/2, 100, fun reduce/2, 1, KVs)).
 
 map(Url,undefined) ->
     Body = fetch_url(Url),
