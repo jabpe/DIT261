@@ -20,7 +20,11 @@ create_collector(N, Callback) ->
     spawn_link(fun () ->
                        Callback !
                            {result,
-                            [receive {Index, Res} -> Res end
+                            [receive
+                                 {Index, Res} ->
+                                     io:format("Index ~p: ~p\n", [Index, Res]),
+                                     Res
+                             end
                              || Index <- lists:seq(0, N - 1)]}
                end).
 
@@ -29,21 +33,20 @@ worker_pool(Funs) ->
     NodeCount = length(get_nodes()),
     {InitialFuns, LaterFuns} = lists:split(NodeCount, Funs),
     % Spawn initial workers
-    io:format("FUN"),
-    io:format(integer_to_list(length(Funs))),
-    io:format("FIRST"),
-    io:format(integer_to_list(length(InitialFuns))),
-    io:format("LAST"),
-    io:format(integer_to_list(length(LaterFuns))),
-    [spawn_link(worker_wrapper(Fun,
-                               Index,
-                               CollectorPid,
-                               self()))
-     || {{Fun, Node}, Index}
-            <- zip(zip(InitialFuns, get_nodes()),
-                   lists:seq(0, NodeCount))],
+    io:format("Self() of worker_pool: ~p\n", [self()]),
+    io:format("Fun length: ~p\n", [length(Funs)]),
+    io:format("Initial length: ~p\n",
+              [length(InitialFuns)]),
+    io:format("Later length: ~p\n", [length(LaterFuns)]),
     % Start server with remainder
     spawn_link(fun () ->
+                       [spawn_link(worker_wrapper(Fun,
+                                                  Index,
+                                                  CollectorPid,
+                                                  self()))
+                        || {{Fun, Node}, Index}
+                               <- zip(zip(InitialFuns, get_nodes()),
+                                      lists:seq(0, NodeCount))],
                        worker_queue(LaterFuns,
                                     length(InitialFuns),
                                     CollectorPid)
@@ -56,24 +59,30 @@ worker_queue([F], Index, CollectorPid) ->
                                Index,
                                CollectorPid,
                                self()),
-    receive {Node, free} -> spawn_link(Node, WorkerFun) end;
+    receive {Node, done} -> spawn_link(Node, WorkerFun) end;
 worker_queue([F | Funs], Index, CollectorPid) ->
+    io:format("Spawning index: ~p\n", [Index]),
+    io:format("CollectorPid: ~p\n", [CollectorPid]),
+    io:format("Self(): ~p\n", [self()]),
     WorkerFun = worker_wrapper(F,
                                Index,
                                CollectorPid,
                                self()),
-    receive {Node, free} -> spawn_link(Node, WorkerFun) end,
+    receive {Node, done} -> spawn_link(Node, WorkerFun) end,
     worker_queue(Funs, Index + 1, CollectorPid).
 
 worker_wrapper(Fun, Index, CollectorPid, PoolPid) ->
     fun () ->
+            io:format("Starting work on index: ~p\n", [Index]),
             % Do work
             Res = Fun(),
             % Send result
             % Question: Can other nodes find the PID?
+            io:format("Sending result to: ~p\n", [CollectorPid]),
             CollectorPid ! {Index, Res},
             % Request more work
-            PoolPid ! {node(), free}
+            io:format("Sending done signal to: ~p\n", [PoolPid]),
+            PoolPid ! {node(), done}
     end.
 
 zip([F], [S | _]) -> [{F, S}];
