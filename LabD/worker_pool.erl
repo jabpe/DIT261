@@ -37,10 +37,9 @@ worker_pool(Funs) ->
     io:format(integer_to_list(length(LaterFuns))),
     [spawn_link(Node,
                 worker_wrapper(Fun, Index, CollectorPid, self()))
-     || {Fun, Node, Index}
-            <- lists:zip3(InitialFuns,
-                          get_nodes(),
-                          lists:seq(0, NodeCount))],
+     || {{Fun, Node}, Index}
+            <- zip(zip(InitialFuns, get_nodes()),
+                   lists:seq(0, NodeCount))],
     % Start server with remainder
     worker_queue(LaterFuns,
                  length(InitialFuns),
@@ -72,3 +71,6 @@ worker_wrapper(Fun, Index, CollectorPid, PoolPid) ->
             % Request more work
             PoolPid ! {node(), free}
     end.
+
+zip([F], [S | _]) -> [{F, S}];
+zip([F | Fs], [S | Ss]) -> [{F, S}] ++ zip(Fs, Ss).
