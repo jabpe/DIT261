@@ -50,7 +50,11 @@ map_reduce_dist(Map,M,Reduce,R,Input) ->
     io:format("Reduce phase complete\n"),
     lists:sort(lists:flatten(Reduceds)).
 
-get_nodes() -> [ 'n1@MacBook-Pro.local'].
+get_nodes() ->
+    ['n0@MacBook-Pro.local',
+     'n1@MacBook-Pro.local',
+     'n2@MacBook-Pro.local',
+     'n3@MacBook-Pro.local'].
 
 ping_nodes([]) -> ok;
 ping_nodes([N]) -> 
