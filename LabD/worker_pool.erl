@@ -2,25 +2,45 @@
 
 -compile([export_all, nowarn_export_all]).
 
+get_nodes() ->
+    ['n0@MacBook-Pro.local',
+     'n1@MacBook-Pro.local',
+     'n2@MacBook-Pro.local'].
+
+factorial(0) -> 1;
+factorial(N) -> N * factorial(N - 1).
+
+test() ->
+    net_adm:ping('n0@MacBook-Pro.local'),
+    Funs = [fun () -> factorial(N) end
+            || N <- lists:seq(0, 10)],
+    Res = worker_pool(Funs),
+    io:format(Res).
+
 create_collector(N, Callback) ->
     spawn_link(fun () ->
                        Callback !
                            [receive {Index, Res} -> Res end
-                            || Index <- lists:seq(0, N)]
+                            || Index <- lists:seq(0, N - 1)]
                end).
 
 worker_pool(Funs) ->
-    Nodes = nodes(),
     CollectorPid = create_collector(length(Funs), self()),
-    {InitialFuns, LaterFuns} = lists:split(length(nodes()),
-                                           Funs),
+    NodeCount = length(get_nodes()),
+    {InitialFuns, LaterFuns} = lists:split(NodeCount, Funs),
     % Spawn initial workers
+    io:format("FUN"),
+    io:format(integer_to_list(length(Funs))),
+    io:format("FIRST"),
+    io:format(integer_to_list(length(InitialFuns))),
+    io:format("LAST"),
+    io:format(integer_to_list(length(LaterFuns))),
     [spawn_link(Node,
                 worker_wrapper(Fun, Index, CollectorPid, self()))
      || {Fun, Node, Index}
-            <- lists:zip(InitialFuns,
-                         nodes(),
-                         lists:seq(0, length(Nodes())))],
+            <- lists:zip3(InitialFuns,
+                          get_nodes(),
+                          lists:seq(0, NodeCount))],
     % Start server with remainder
     worker_queue(LaterFuns,
                  length(InitialFuns),
@@ -52,26 +72,3 @@ worker_wrapper(Fun, Index, CollectorPid, PoolPid) ->
             % Request more work
             PoolPid ! {node(), free}
     end.
-
-% How do we solve the callback?
-% It's unary functions. How do we distribute them across nodes?
-
-% (Funs) -> [Fun() || Fun <- Funs]
-% Pseudocode
-% For each connected node, send work and uuid for that work package
-% Gather all answers
-% We can provide a callback to each worker with what to call when they're done?
-% We can use message passing to avoid blocking?
-% We have one process gathering the data. We have one process handling the work. One accumulator, one distributor.
-
-% Worker
-% Register_worker
-% Await a work package
-% Call do_work with the package
-
-% Do_work
-% Conduct the work
-% Send the result to master
-% Ask for new work
-% Call do_work with the work package
-
