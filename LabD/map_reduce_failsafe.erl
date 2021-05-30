@@ -163,9 +163,10 @@ worker_queue([F], Index, CollectorPid, CurrentWork,
     end;
 worker_queue([F | Funs], Index, CollectorPid,
              CurrentWork, IndexOverride) ->
+    io:format("Listening on ~p\n", [self()]),
     receive
-        {done, Node, Index, Res} ->
-            CollectorPid ! {Index, Res},
+        {done, Node, I, Res} ->
+            CollectorPid ! {I, Res},
             CurrentWork = lists:filter(fun ({K, _V, _F}) ->
                                                K =/= Node
                                        end,
