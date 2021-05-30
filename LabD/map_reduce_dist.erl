@@ -51,10 +51,9 @@ map_reduce_dist(Map,M,Reduce,R,Input) ->
     close_file_nodes(),
     lists:sort(lists:flatten(Reduceds)).
 
-get_nodes() -> [ 'n1@pbs-iMac'
-                ,'n2@pbs-iMac'
-                ,'n3@pbs-iMac'
-                ,'n4@pbs-iMac' ].
+node_count() -> 4.
+get_nodes() -> get_nodes(node_count()).
+get_nodes(N) -> lists:map(fun (Num) -> list_to_atom(atom_to_list('n') ++ integer_to_list(Num) ++ atom_to_list('@pbs-iMac')) end, lists:seq(1,N)).
 
 ping_nodes([]) -> ok;
 ping_nodes([N]) -> 
