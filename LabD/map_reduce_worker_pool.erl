@@ -30,12 +30,11 @@ group(K, Vs, Rest) ->
 map_reduce_worker_pool(Map, M, Reduce, R, Input) ->
     ping_nodes(),
     Splits = split_into(M, Input),
-    Files = [rpc:async_call(Node,
-                            dets,
-                            open_file,
-                            [web, [{file, "web.dat"}]])
-             || Node <- nodes()],
-    yields_async(Files),
+    [rpc:call(Node,
+              dets,
+              open_file,
+              [web, [{file, "web.dat"}]])
+     || Node <- nodes()],
     Mappers = [map_async(Map, R, Split) || Split <- Splits],
     Mappeds = worker_pool(Mappers),
     io:format("Map phase complete\n"),
@@ -84,17 +83,6 @@ reduce_async(Reduce, I, Mappeds) ->
             Result
     end.
 
-yields_async([]) -> [];
-yields_async([K]) ->
-    case catch rpc:yield(K) of
-        {badrpc, R} -> [{badrpc, R}];
-        Res -> [Res]
-    end;
-yields_async([K | Ks]) ->
-    case catch rpc:yield(K) of
-        {badrpc, R} -> [{badrpc, R}] ++ yields_async(Ks);
-        Res -> [Res] ++ yields_async(Ks)
-    end.
 
 factorial(0) -> 1;
 factorial(N) -> N * factorial(N - 1).
