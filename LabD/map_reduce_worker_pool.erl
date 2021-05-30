@@ -1,4 +1,4 @@
--module(worker_pool).
+-module(map_reduce_worker_pool).
 
 -compile([export_all, nowarn_export_all]).
 
@@ -27,7 +27,7 @@ group(K, Vs, [{K, V} | Rest]) ->
 group(K, Vs, Rest) ->
     [{K, lists:reverse(Vs)} | group(Rest)].
 
-map_reduce_dist(Map, M, Reduce, R, Input) ->
+map_reduce_worker_pool(Map, M, Reduce, R, Input) ->
     ping_nodes(),
     Splits = split_into(M, Input),
     Files = [rpc:async_call(Node,
