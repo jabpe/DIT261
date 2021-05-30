@@ -34,7 +34,7 @@ map_reduce_worker_pool(Map, M, Reduce, R, Input) ->
                             dets,
                             open_file,
                             [web, [{file, "web.dat"}]])
-             || Node <- get_nodes()],
+             || Node <- nodes()],
     yields_async(Files),
     Mappers = [map_async(Map, R, Split) || Split <- Splits],
     Mappeds = worker_pool(Mappers),
@@ -120,7 +120,7 @@ worker_pool(Funs) ->
     spawn_link(fun () ->
                        % Spawn initial workers
                        [spawn_link(Node,
-                                   worker_pool,
+                                   map_reduce_worker_pool,
                                    worker_wrapper,
                                    [Fun, Index, CollectorPid, self()])
                         || {{Fun, Node}, Index}
@@ -138,7 +138,7 @@ worker_queue([F], Index, CollectorPid) ->
     receive
         {Node, done} ->
             spawn_link(Node,
-                       worker_pool,
+                       map_reduce_worker_pool,
                        worker_wrapper,
                        [F, Index, CollectorPid, self()])
     end;
@@ -146,7 +146,7 @@ worker_queue([F | Funs], Index, CollectorPid) ->
     receive
         {Node, done} ->
             spawn_link(Node,
-                       worker_pool,
+                       map_reduce_worker_pool,
                        worker_wrapper,
                        [F, Index, CollectorPid, self()])
     end,
