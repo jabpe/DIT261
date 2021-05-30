@@ -47,11 +47,10 @@ map_reduce_dist(Map, M, Reduce, R, Input) ->
     io:format("REDUCEDS: ~p\n", [Reduceds]),
     lists:sort(lists:flatten(Reduceds)).
 
-get_nodes() ->
-    ['n1@MacBook-Pro.local',
-     'n2@MacBook-Pro.local',
-     'n3@MacBook-Pro.local',
-     'n0@MacBook-Pro.local'].
+node_count() -> 4.
+get_nodes() -> get_nodes(node_count()).
+get_nodes(N) -> lists:map(fun (Num) -> list_to_atom(atom_to_list('n') ++ integer_to_list(Num) ++ atom_to_list('@MacBook-Pro.local')) end, lists:seq(1,N)).
+
 
 ping_nodes([]) -> ok;
 ping_nodes([N]) ->
