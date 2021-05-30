@@ -11,10 +11,10 @@ factorial(0) -> 1;
 factorial(N) -> N * factorial(N - 1).
 
 test() ->
-    net_adm:ping('n0@MacBook-Pro.local'),
+    [net_adm:ping(E) || E <- get_nodes()],
     Funs = [fun () -> factorial(N) end
             || N <- lists:seq(0, 10)],
-    Res = worker_pool(Funs).
+    worker_pool(Funs).
 
 create_collector(N, Callback) ->
     spawn_link(fun () ->
@@ -30,7 +30,7 @@ create_collector(N, Callback) ->
 
 worker_pool(Funs) ->
     CollectorPid = create_collector(length(Funs), self()),
-    NodeCount = length(get_nodes()),
+    NodeCount = length(nodes()),
     {InitialFuns, LaterFuns} = lists:split(NodeCount, Funs),
     % Spawn initial workers
     io:format("Self() of worker_pool: ~p\n", [self()]),
@@ -45,7 +45,7 @@ worker_pool(Funs) ->
                                                   CollectorPid,
                                                   self()))
                         || {{Fun, Node}, Index}
-                               <- zip(zip(InitialFuns, get_nodes()),
+                               <- zip(zip(InitialFuns, nodes()),
                                       lists:seq(0, NodeCount))],
                        worker_queue(LaterFuns,
                                     length(InitialFuns),
