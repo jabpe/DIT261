@@ -14,14 +14,14 @@ test() ->
     net_adm:ping('n0@MacBook-Pro.local'),
     Funs = [fun () -> factorial(N) end
             || N <- lists:seq(0, 10)],
-    Res = worker_pool(Funs),
-    io:format(Res).
+    Res = worker_pool(Funs).
 
 create_collector(N, Callback) ->
     spawn_link(fun () ->
                        Callback !
-                           [receive {Index, Res} -> Res end
-                            || Index <- lists:seq(0, N - 1)]
+                           {result,
+                            [receive {Index, Res} -> Res end
+                             || Index <- lists:seq(0, N - 1)]}
                end).
 
 worker_pool(Funs) ->
@@ -35,17 +35,21 @@ worker_pool(Funs) ->
     io:format(integer_to_list(length(InitialFuns))),
     io:format("LAST"),
     io:format(integer_to_list(length(LaterFuns))),
-    [spawn_link(Node,
-                worker_wrapper(Fun, Index, CollectorPid, self()))
+    [spawn_link(worker_wrapper(Fun,
+                               Index,
+                               CollectorPid,
+                               self()))
      || {{Fun, Node}, Index}
             <- zip(zip(InitialFuns, get_nodes()),
                    lists:seq(0, NodeCount))],
     % Start server with remainder
-    worker_queue(LaterFuns,
-                 length(InitialFuns),
-                 CollectorPid),
+    spawn_link(fun () ->
+                       worker_queue(LaterFuns,
+                                    length(InitialFuns),
+                                    CollectorPid)
+               end),
     % Await result
-    receive Res -> Res end.
+    receive {result, Res} -> Res end.
 
 worker_queue([F], Index, CollectorPid) ->
     WorkerFun = worker_wrapper(F,
