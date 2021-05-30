@@ -1,53 +1,57 @@
+-module(worker_pool).
+
+-compile([export_all, nowarn_export_all]).
+
+create_collector(N, Callback) ->
+    spawn_link(fun () ->
+                       Callback !
+                           [receive {Index, Res} -> Res end
+                            || Index <- lists:seq(0, N)]
+               end).
+
 worker_pool(Funs) ->
     Nodes = nodes(),
-    CollectorPid = create_collector(length(Funs)),
-    Pids = [spawn_link(Node, Fun)
-        || {Fun, Node} <- zip(Funs, get_nodes())],
-    
-    Key = rpc:async_call(Node, map_reduce_dist, mapper_dist, [Map,R,Split]),
-    case catch rpc:yield(Key) of
-        {badrpc, Reason} -> [];
-        Result -> Result    
-    end.
-    Mappeds = 
-        [map_async(Node,Map,R,Split)
-        || {Split, Node} <- rotate_zip(Splits, get_nodes())],
-
-create_collector(N) -> 
-    spawn_link(fun () -> 
-        [receive {Index, Res} -> Res end
-        || Index <- lists:seq(0, 100)],
-    ).
+    CollectorPid = create_collector(length(Funs), self()),
+    {InitialFuns, LaterFuns} = lists:split(length(nodes()),
+                                           Funs),
+    % Spawn initial workers
+    [spawn_link(Node,
+                worker_wrapper(Fun, Index, CollectorPid, self()))
+     || {Fun, Node, Index}
+            <- lists:zip(InitialFuns,
+                         nodes(),
+                         lists:seq(0, length(Nodes())))],
+    % Start server with remainder
+    worker_queue(LaterFuns,
+                 length(InitialFuns),
+                 CollectorPid),
+    % Await result
+    receive Res -> Res end.
 
 worker_queue([F], Index, CollectorPid) ->
-    WorkerFun = worker_wrapper(F, Index, CollectorPid, self()),
-    receive
-        {Node, free} -> spawn_link(Node, WorkerFun)
-    end;
-
-worker_queue([F|Funs], Index, CollectorPid) ->
-    WorkerFun = worker_wrapper(F, Index, CollectorPid, self()),
-    receive
-        {Node, free} -> spawn_link(Node, WorkerFun)
-    end,
-    worker_queue(Funs, Index+1, CollectorPid).
+    WorkerFun = worker_wrapper(F,
+                               Index,
+                               CollectorPid,
+                               self()),
+    receive {Node, free} -> spawn_link(Node, WorkerFun) end;
+worker_queue([F | Funs], Index, CollectorPid) ->
+    WorkerFun = worker_wrapper(F,
+                               Index,
+                               CollectorPid,
+                               self()),
+    receive {Node, free} -> spawn_link(Node, WorkerFun) end,
+    worker_queue(Funs, Index + 1, CollectorPid).
 
 worker_wrapper(Fun, Index, CollectorPid, PoolPid) ->
-   fun() ->
-        % Do work
-        Res = Fun(),
-        % Send result
-        % Question: Can other nodes find the PID?
-        CollectorPid ! {Index, Res},
-        % Request more work
-        PoolPid ! {node(), free}
+    fun () ->
+            % Do work
+            Res = Fun(),
+            % Send result
+            % Question: Can other nodes find the PID?
+            CollectorPid ! {Index, Res},
+            % Request more work
+            PoolPid ! {node(), free}
     end.
-
-rotate([F], [S|_]) ->
-    [{F, S}];
-rotate([F|Fs], [S|Ss]) ->
-    [{F, S}] ++ rotate(Fs, Ss).
-
 
 % How do we solve the callback?
 % It's unary functions. How do we distribute them across nodes?
@@ -70,3 +74,4 @@ rotate([F|Fs], [S|Ss]) ->
 % Send the result to master
 % Ask for new work
 % Call do_work with the work package
+
