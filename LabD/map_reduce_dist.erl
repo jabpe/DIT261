@@ -37,20 +37,23 @@ map_reduce_dist(Map, M, Reduce, R, Input) ->
     Mappeds = [map_async(Node, Map, R, Split)
                || {Split, Node} <- Splits],
     io:format("Map phase complete\n"),
-    Len = length(Mappeds),
-    io:format("MAPPEDS LEN: ~p\n", [Len]),
-    io:format("MAPPEDS: ~p\n", [Mappeds]),
     Reduceds = [reduce_async(Node, Reduce, I, Mappeds)
                 || {I, Node}
                        <- rotate_zip(lists:seq(0, R - 1), get_nodes())],
     io:format("Reduce phase complete\n"),
-    io:format("REDUCEDS: ~p\n", [Reduceds]),
     lists:sort(lists:flatten(Reduceds)).
 
 node_count() -> 4.
-get_nodes() -> get_nodes(node_count()).
-get_nodes(N) -> lists:map(fun (Num) -> list_to_atom(atom_to_list('n') ++ integer_to_list(Num) ++ atom_to_list('@MacBook-Pro.local')) end, lists:seq(1,N)).
 
+get_nodes() -> get_nodes(node_count()).
+
+get_nodes(N) ->
+    lists:map(fun (Num) ->
+                      list_to_atom(atom_to_list(n) ++
+                                       integer_to_list(Num) ++
+                                           atom_to_list('@MacBook-Pro.local'))
+              end,
+              lists:seq(1, N)).
 
 ping_nodes([]) -> ok;
 ping_nodes([N]) ->
