@@ -3,7 +3,7 @@ Erik Sievers, Predrag Bozhovikj
 
 ---
 
-The benchmarks were run on a single MacBook Pro with a 2.5GHz Dual-Core Intel Core i7 processor and 16gb of ram. Four processes were used.
+The benchmarks were run on a single MacBook Pro with a 2.5GHz Dual-Core Intel Core i7 processor and 16gb of ram. Four processes were used. For each node, the data file was loaded manually using `dets:open_file(web, [{file, "web.dat"}])`.
 
 |     Approach          |                    Execution time seconds   |
 | ------------------: | :-----------------------------------------: |
