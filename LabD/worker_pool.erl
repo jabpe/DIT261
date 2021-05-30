@@ -40,7 +40,8 @@ worker_pool(Funs) ->
     io:format("Later length: ~p\n", [length(LaterFuns)]),
     % Start server with remainder
     spawn_link(fun () ->
-                       [spawn_link(worker_wrapper(Fun,
+                       [spawn_link(Node,
+                                   worker_wrapper(Fun,
                                                   Index,
                                                   CollectorPid,
                                                   self()))
