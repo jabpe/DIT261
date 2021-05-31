@@ -2,6 +2,16 @@
 
 -compile([export_all, nowarn_export_all]).
 
+get_nodes(N) ->
+    lists:map(fun (Num) ->
+                      list_to_atom(atom_to_list(n) ++
+                                       integer_to_list(Num) ++
+                                           atom_to_list('@cli-a-177.wlcli.tugraz.at'))
+              end,
+              lists:seq(0, N)).
+
+get_nodes() -> get_nodes(node_count()).
+
 map_reduce_seq(Map, Reduce, Input) ->
     Mapped = [{K2, V2}
               || {K, V} <- Input, {K2, V2} <- Map(K, V)],
@@ -111,10 +121,6 @@ worker_pool(Funs) ->
     CollectorPid = create_collector(length(Funs), self()),
     NodeCount = length(nodes()),
     {InitialFuns, LaterFuns} = lists:split(NodeCount, Funs),
-    io:format("initial: ~p\n", [length(InitialFuns)]),
-    io:format("later: ~p\n", [length(LaterFuns)]),
-    io:format("nodes: ~p\n", [length(nodes())]),
-    io:format("nodecount: ~p\n", [NodeCount]),
     spawn_link(fun () ->
                        % Start node monitor
                        monitor_nodes(),
@@ -151,10 +157,10 @@ worker_queue([F], Index, CollectorPid, CurrentWork,
                        [F, Index, self()]);
         {nodedown, FailedNode} ->
             io:format("failed node ~p\n", [FailedNode]),
-            {I, Fold} = first(lists:filter(fun ({K, V}) ->
-                                                   K == FailedNode
-                                           end,
-                                           CurrentWork)),
+            {_, I, Fold} = lists:filter(fun ({K, V, F}) ->
+                                                K == FailedNode
+                                        end,
+                                        CurrentWork),
             worker_queue([Fold] ++ [F],
                          Index,
                          CollectorPid,
@@ -163,77 +169,67 @@ worker_queue([F], Index, CollectorPid, CurrentWork,
     end;
 worker_queue([F | Funs], Index, CollectorPid,
              CurrentWork, IndexOverride) ->
-    io:format("Listening on ~p\n", [self()]),
     receive
         {done, Node, I, Res} ->
             CollectorPid ! {I, Res},
-            CurrentWork = lists:filter(fun ({K, _V, _F}) ->
-                                               K =/= Node
-                                       end,
-                                       CurrentWork),
+            FilteredWork = lists:filter(fun ({K, _V, _F}) ->
+                                                K =/= Node
+                                        end,
+                                        CurrentWork),
             if IndexOverride =/= Index ->
+                   % There was a problem. Need to reattempt a failed execution
                    io:format("index ~p, override index ~p\n",
                              [Index, IndexOverride]),
                    spawn_link(Node,
                               map_reduce_failsafe,
                               worker_wrapper,
                               [F, IndexOverride, self()]),
-                   CurrentWork = CurrentWork ++ [{Node, IndexOverride, F}],
+                   NextWork = FilteredWork ++ [{Node, IndexOverride, F}],
                    worker_queue([F | Funs],
                                 Index,
                                 CollectorPid,
-                                CurrentWork,
+                                NextWork,
                                 Index);
                true ->
-                   io:format("index ~p\n", [Index]),
                    spawn_link(Node,
                               map_reduce_failsafe,
                               worker_wrapper,
                               [F, Index, self()]),
-                   CurrentWork = CurrentWork ++ [{Node, Index, F}],
+                   NextWork = FilteredWork ++ [{Node, Index, F}],
                    worker_queue(Funs,
                                 Index + 1,
                                 CollectorPid,
-                                CurrentWork,
+                                NextWork,
                                 Index + 1)
             end;
         {nodedown, FailedNode} ->
-            io:format("failed node ~p\n", [FailedNode]),
-            {I, Fold} = first(lists:filter(fun ({K, V}) ->
-                                                   K == FailedNode
-                                           end,
-                                           CurrentWork)),
+            NextWork = lists:filter(fun ({K, _V, _F}) ->
+                                            K =/= FailedNode
+                                    end,
+                                    CurrentWork),
+            {_, I, Fold} = lists:filter(fun ({K, _V, _F}) ->
+                                                K == FailedNode
+                                        end,
+                                        CurrentWork),
             worker_queue([Fold] ++ [F] ++ Funs,
                          Index,
                          CollectorPid,
-                         CurrentWork,
+                         NextWork,
                          I)
     end.
 
-first([{_, V, F} | _]) -> {V, F}.
-
 worker_wrapper(Fun, Index, PoolPid) ->
+    io:format("~p: Starting work on index ~p\n",
+              [node(), Index]),
     % Do work
-    io:format("Starting work on index ~p\n", [Index]),
     Res = Fun(),
     % Send result
-    io:format("Sending result to ~p\n", [PoolPid]),
     PoolPid ! {done, node(), Index, Res}.
 
 zip([F], [S | _]) -> [{F, S}];
 zip([F | Fs], [S | Ss]) -> [{F, S}] ++ zip(Fs, Ss).
 
 node_count() -> 3.
-
-get_nodes(N) ->
-    lists:map(fun (Num) ->
-                      list_to_atom(atom_to_list(n) ++
-                                       integer_to_list(Num) ++
-                                           atom_to_list('@MacBook-Pro.local'))
-              end,
-              lists:seq(0, N)).
-
-get_nodes() -> get_nodes(node_count()).
 
 monitor_nodes() ->
     Parent = self(),
