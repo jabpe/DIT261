@@ -6,7 +6,7 @@ get_nodes(N) ->
     lists:map(fun (Num) ->
                       list_to_atom(atom_to_list(n) ++
                                        integer_to_list(Num) ++
-                                           atom_to_list('@cli-a-177.wlcli.tugraz.at'))
+                                           atom_to_list('@pbs-iMac'))
               end,
               lists:seq(0, N)).
 
@@ -34,12 +34,6 @@ group(K, Vs, Rest) ->
 map_reduce_failsafe(Map, M, Reduce, R, Input) ->
     ping_nodes(),
     Splits = split_into(M, Input),
-    Files = [rpc:async_call(Node,
-                            dets,
-                            open_file,
-                            [web, [{file, "web.dat"}]])
-             || Node <- nodes()],
-    yields_async(Files),
     Mappers = [map_async(Map, R, Split) || Split <- Splits],
     Mappeds = worker_pool(Mappers),
     io:format("Map phase complete\n"),
@@ -125,7 +119,7 @@ worker_pool(Funs) ->
                        % Start node monitor
                        monitor_nodes(),
                        % Spawn initial workers
-                       [spawn_link(Node,
+                       [spawn(Node,
                                    map_reduce_failsafe,
                                    worker_wrapper,
                                    [Fun, Index, self()])
@@ -193,7 +187,7 @@ worker_queue(Fs, Index, CollectorPid, CurrentWork,
                    % There was a problem. Need to reattempt a failed execution
                    io:format("index ~p, override index ~p\n",
                              [Index, IndexOverride]),
-                   spawn_link(Node,
+                   spawn(Node,
                               map_reduce_failsafe,
                               worker_wrapper,
                               [F, IndexOverride, self()]),
@@ -205,7 +199,7 @@ worker_queue(Fs, Index, CollectorPid, CurrentWork,
                                 NextWork,
                                 Index);
                true ->
-                   spawn_link(Node,
+                   spawn(Node,
                               map_reduce_failsafe,
                               worker_wrapper,
                               [F, Index, self()]),
@@ -218,14 +212,15 @@ worker_queue(Fs, Index, CollectorPid, CurrentWork,
                                 Index + 1)
             end;
         {nodedown, FailedNode} ->
+            io:format("Failed node found: ~p\n", [FailedNode]),
             NextWork = lists:filter(fun ({K, _V, _F}) ->
                                             K =/= FailedNode
                                     end,
                                     CurrentWork),
-            {_, I, Fold} = lists:filter(fun ({K, _V, _F}) ->
+            {_, I, Fold} = lists:nth(1, lists:filter(fun ({K, _V, _F}) ->
                                                 K == FailedNode
                                         end,
-                                        CurrentWork),
+                                        CurrentWork)),
             io:format("Starting queue at ~p\n", [Index]),
             worker_queue([Fold] ++ [F] ++ Funs,
                          Index,
@@ -265,10 +260,7 @@ monitor_nodes(Parent, Ns, Ref) ->
                                              io:format("Init and monitor node ~p\n",
                                                        [Node]),
                                              monitor_node(Node, true),
-                                             rpc:call(Node,
-                                                      dets,
-                                                      open_file,
-                                                      ["web.dat"]),
+                                             spawn(Node, dets, open_file, [web, {file, "web.dat"}]),
                                              {pong, Node};
                                          pang -> {pang, Node}
                                      end
