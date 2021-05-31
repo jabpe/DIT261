@@ -146,31 +146,44 @@ worker_pool(Funs) ->
     % Await result
     receive {result, Res} -> Res end.
 
-worker_queue([F], Index, CollectorPid, CurrentWork,
-             _IndexOverride) ->
+worker_queue([], _, _, [], _) -> [];
+worker_queue([], Index, CollectorPid, CurrentWork,
+             IndexOverride) ->
     receive
-        {done, Node, Index, Res} ->
-            CollectorPid ! {Index, Res},
-            spawn_link(Node,
-                       map_reduce_failsafe,
-                       worker_wrapper,
-                       [F, Index, self()]);
+        {done, Node, I, Res} ->
+            io:format("Sending result ~p to collector\n", [I]),
+            CollectorPid ! {I, Res},
+            FilteredWork = lists:filter(fun ({K, _V, _F}) ->
+                                                K =/= Node
+                                        end,
+                                        CurrentWork),
+            io:format("Starting queue at ~p\n", [Index]),
+            worker_queue([],
+                         Index,
+                         CollectorPid,
+                         FilteredWork,
+                         Index);
         {nodedown, FailedNode} ->
-            io:format("failed node ~p\n", [FailedNode]),
-            {_, I, Fold} = lists:filter(fun ({K, V, F}) ->
+            NextWork = lists:filter(fun ({K, _V, _F}) ->
+                                            K =/= FailedNode
+                                    end,
+                                    CurrentWork),
+            {_, I, Fold} = lists:filter(fun ({K, _V, _F}) ->
                                                 K == FailedNode
                                         end,
                                         CurrentWork),
-            worker_queue([Fold] ++ [F],
-                         Index,
-                         CollectorPid,
-                         CurrentWork,
-                         I)
+            io:format("Starting queue at ~p\n", [Index]),
+            worker_queue([Fold], Index, CollectorPid, NextWork, I)
     end;
-worker_queue([F | Funs], Index, CollectorPid,
-             CurrentWork, IndexOverride) ->
+worker_queue(Fs, Index, CollectorPid, CurrentWork,
+             IndexOverride) ->
+    % F is the first function, Funs are the rest.
+    % Note that Funs may be empty
+    {First, Funs} = lists:split(1, Fs),
+    F = lists:nth(1, First),
     receive
         {done, Node, I, Res} ->
+            io:format("Sending result ~p to collector\n", [I]),
             CollectorPid ! {I, Res},
             FilteredWork = lists:filter(fun ({K, _V, _F}) ->
                                                 K =/= Node
@@ -185,6 +198,7 @@ worker_queue([F | Funs], Index, CollectorPid,
                               worker_wrapper,
                               [F, IndexOverride, self()]),
                    NextWork = FilteredWork ++ [{Node, IndexOverride, F}],
+                   io:format("Starting queue at ~p\n", [Index + 1]),
                    worker_queue([F | Funs],
                                 Index,
                                 CollectorPid,
@@ -196,6 +210,7 @@ worker_queue([F | Funs], Index, CollectorPid,
                               worker_wrapper,
                               [F, Index, self()]),
                    NextWork = FilteredWork ++ [{Node, Index, F}],
+                   io:format("Starting queue at ~p\n", [Index + 1]),
                    worker_queue(Funs,
                                 Index + 1,
                                 CollectorPid,
@@ -211,6 +226,7 @@ worker_queue([F | Funs], Index, CollectorPid,
                                                 K == FailedNode
                                         end,
                                         CurrentWork),
+            io:format("Starting queue at ~p\n", [Index]),
             worker_queue([Fold] ++ [F] ++ Funs,
                          Index,
                          CollectorPid,
